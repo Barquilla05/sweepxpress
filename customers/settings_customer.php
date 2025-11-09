@@ -1,187 +1,365 @@
 <?php
+session_start();
 require_once __DIR__ . '/../config.php';
 
-// ✅ Redirect kung hindi logged in
+// Redirect if not logged in
 if (!isset($_SESSION['user'])) {
     header("Location: /sweepxpress/login.php");
     exit;
 }
 
-$user = $_SESSION['user'];
+// Merge user data with defaults
+$user = array_merge([
+    'id' => '',
+    'username' => '',
+    'name' => '',
+    'email' => '',
+    'phone_number' => '',
+    'gender' => '',
+    'birth_date' => '',
+    'profile_image' => '/sweepxpress/assets/default-avatar.png',
+    'street_address' => '',
+    'city' => '',
+    'zip_code' => ''
+], $_SESSION['user']);
 
-// 🎯 FIX for "Undefined array key profile_image" warning.
-// Ensure the 'profile_image' key exists in the $user array, setting it to null if missing from the session.
-$user['profile_image'] = $user['profile_image'] ?? null;
-
-// Initialize $success for display
 $success = null;
+$error = null;
 
-// ✅ Handle Profile Update
+// ✅ Handle form submit
 if (isset($_POST['update_account'])) {
-    $name = trim($_POST['name']);
-    $email = trim($_POST['email']);
-    $password = $_POST['password']; // New password input
-
-    // Use current image as default
+    $username = trim($_POST['username'] ?? '');
+    $name = trim($_POST['name'] ?? '');
+    $phone = trim($_POST['phone_number'] ?? '');
+    $gender = $_POST['gender'] ?? '';
+    $birth_date = $_POST['birth_date'] ?? '';
+    
+    // Address fields
+    $streetAddress = trim($_POST['street_address'] ?? '');
+    $city = trim($_POST['city'] ?? '');
+    $zipCode = trim($_POST['zip_code'] ?? '');
+    
+    $currentPassword = $_POST['current_password'] ?? ''; 
+    $newPassword = $_POST['new_password'] ?? '';       
+    
     $profileImage = $user['profile_image']; 
-    $newProfileImageUploaded = false; 
 
-    // ✅ Handle profile image upload
+    // --- Image Upload Logic ---
     if (!empty($_FILES['profile_image']['name'])) {
         $uploadDir = __DIR__ . '/../uploads/profiles/';
         if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-        // Basic sanitation and unique filename generation
         $originalFilename = basename($_FILES['profile_image']['name']);
-        $extension = pathinfo($originalFilename, PATHINFO_EXTENSION);
-        $filename = time() . '_' . md5(uniqid()) . '.' . $extension; // Added uniqid for extra uniqueness
-        $targetFile = $uploadDir . $filename;
-
-        // Check if file is an actual image and move it
-        $check = getimagesize($_FILES['profile_image']['tmp_name']);
-        if ($check !== false) {
+        $extension = strtolower(pathinfo($originalFilename, PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png'];
+        
+        if ($_FILES['profile_image']['size'] > 1048576) {
+            $error = "Image file is too large (max 1MB).";
+        } elseif (in_array($extension, $allowed)) {
+            $filename = time() . '_' . md5(uniqid()) . '.' . $extension;
+            $targetFile = $uploadDir . $filename;
             if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $targetFile)) {
                 $profileImage = '/sweepxpress/uploads/profiles/' . $filename;
-                $newProfileImageUploaded = true;
             } else {
-                 // You might want to add error handling here for file move failure
+                $error = "Failed to upload image.";
             }
         } else {
-             // You might want to add error handling here if the file is not an image
+            $error = "Only JPG, JPEG, and PNG files are allowed.";
         }
     }
-
-    // Prepare update query parts (dynamic update)
-    $updates = ['name = ?', 'email = ?'];
-    $params = [$name, $email];
-
-    // Add profile_image update if a new image was uploaded
-    if ($newProfileImageUploaded) {
-        $updates[] = 'profile_image = ?';
-        $params[] = $profileImage;
+    
+    // --- Password Change Logic ---
+    if (!$error && !empty($newPassword)) {
+        if (empty($currentPassword)) {
+            $error = "You must enter your Current Password to change your password.";
+        } else {
+            $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = ?");
+            $stmt->execute([$user['id']]);
+            $dbUser = $stmt->fetch();
+            
+            if (!$dbUser || !password_verify($currentPassword, $dbUser['password_hash'])) {
+                $error = "The Current Password you entered is incorrect.";
+            }
+        }
     }
     
-    // Add password update if a new password was provided
-    if (!empty($password)) {
-        // ⚠️ SECURITY: Hashing the new password before storing it 
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $updates[] = 'password_hash = ?'; 
-        $params[] = $hashedPassword;
+    // --- Database Update ---
+    if (!$error) {
+        $updates = [
+            'username = ?',
+            'name = ?',
+            'phone_number = ?',
+            'gender = ?',
+            'birth_date = ?',
+            'profile_image = ?',
+            'street_address = ?',
+            'city = ?',
+            'zip_code = ?'
+        ];
+        $params = [
+            $username, $name, $phone, $gender, $birth_date, $profileImage, 
+            $streetAddress, $city, $zipCode 
+        ];
+
+        if (!empty($newPassword)) { 
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $updates[] = 'password_hash = ?';
+            $params[] = $hashedPassword;
+        }
+
+        $params[] = $user['id'];
+        $sql = "UPDATE users SET " . implode(', ', $updates) . " WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        
+        try {
+            $stmt->execute($params);
+
+            $_SESSION['user'] = array_merge($user, [
+                'username' => $username,
+                'name' => $name,
+                'phone_number' => $phone,
+                'gender' => $gender,
+                'birth_date' => $birth_date,
+                'profile_image' => $profileImage,
+                'street_address' => $streetAddress,
+                'city' => $city,
+                'zip_code' => $zipCode
+            ]);
+
+            $user = $_SESSION['user'];
+            $success = "Your profile has been updated successfully!";
+        } catch (PDOException $e) {
+            if (str_contains($e->getMessage(), 'Duplicate entry')) {
+                $error = "Username is already taken. Please choose another.";
+            } else {
+                $error = "An error occurred while updating your profile: " . $e->getMessage();
+            }
+        }
     }
-
-    $params[] = $user['id']; // Add user ID for the WHERE clause
-
-    // Combine updates into a single query
-    // 💡 FIX for Fatal error: Unknown column 'profile_image' (It's now conditionally included)
-    $sql = "UPDATE users SET " . implode(', ', $updates) . " WHERE id = ?";
-    
-    // ✅ Execute DB update
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-
-    // ✅ Update session with new values
-    $_SESSION['user']['name'] = $name;
-    $_SESSION['user']['email'] = $email;
-    
-    // Update session image if changed
-    if ($newProfileImageUploaded) {
-        $_SESSION['user']['profile_image'] = $profileImage;
-    }
-    
-    $user = $_SESSION['user']; // refresh the $user array
-    $success = "Account updated successfully!"; // Set flag to trigger modal
 }
-
-// Ensure the image path used for display is safe (uses default image if $user['profile_image'] is null)
-$displayImagePath = htmlspecialchars($user['profile_image'] ?? '/sweepxpress/assets/default-avatar.png');
-
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
-<div class="container my-4">
-    <h1 class="mb-4"><i class="bi bi-person-circle"></i> My Settings</h1>
+<style>
+body {
+    background-color: #fafafa;
+    font-family: 'Inter', sans-serif;
+}
+.container-profile {
+    padding-top: 30px;
+}
+.profile-wrapper {
+    max-width: 1300px;
+    width: 100%;
+    margin-left: -200px;
+    margin-right: auto;
+}
+.sidebar {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1.5rem;
+    height: 100%;
+}
+.sidebar h6 {
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #222;
+}
+.sidebar a {
+    display: block;
+    color: #555;
+    text-decoration: none;
+    margin: 0.4rem 0;
+    transition: 0.2s;
+}
+.sidebar a:hover,
+.sidebar a.active {
+    color: #ee4d2d;
+    font-weight: 600;
+}
+.profile-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 2rem;
+}
+.profile-card h5 {
+    font-weight: 600;
+    color: #222;
+}
+.form-control {
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+.btn-save {
+    background-color: #ee4d2d;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600;
+    transition: 0.3s;
+}
+.btn-save:hover {
+    background-color: #d74424;
+}
+.avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #eee;
+}
+.alert-success {
+    background: #f0f9f4;
+    color: #2e7d32;
+    border-left: 4px solid #2e7d32;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+.alert-danger {
+    background: #fef2f2;
+    color: #cc3333;
+    border-left: 4px solid #cc3333;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+</style>
 
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header">
-            <h2 class="h5 mb-0"><i class="bi bi-person-lines-fill"></i> My Account</h2>
-        </div>
-        <div class="card-body">
-
-            <div class="text-center mb-3">
-                <img src="<?php echo $displayImagePath; ?>" 
-                    alt="Profile" class="rounded-circle" width="100" height="100">
+<div class="container py-5 container-profile">
+    <div class="profile-wrapper">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="sidebar">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="<?= htmlspecialchars($user['profile_image']); ?>" class="avatar-preview me-2" alt="Profile">
+                        <div>
+                            <strong><?= htmlspecialchars($user['username']); ?></strong>
+                            <div class="text-muted small"><?= htmlspecialchars($user['email']); ?></div>
+                        </div>
+                    </div>
+                    <h6>My Account</h6>
+                    <a href="#" class="active">Profile</a>
+                    <a href="#">Banks & Cards</a>
+                    <a href="#">Addresses</a>
+                    <a href="#">Change Password</a>
+                    <a href="#">Privacy Settings</a>
+                    <a href="#">Notification Settings</a>
+                    <hr>
+                    <h6>My Purchase</h6>
+                    <a href="#">Notifications</a>
+                    <a href="#">My Vouchers</a>
+                    <a href="#">My Sweep Coins</a>
+                </div>
             </div>
 
-            <form method="post" enctype="multipart/form-data">
-                <div class="mb-3">
-                    <label class="form-label">Profile Image</label>
-                    <input type="file" name="profile_image" class="form-control">
+            <div class="col-md-8">
+                <div class="profile-card">
+                    <h5 class="mb-4 text-center">My Profile</h5>
+                    <p class="text-muted mb-4 text-center">Manage and protect your account</p>
+
+                    <?php if ($success): ?>
+                        <div class="alert-success"><?= htmlspecialchars($success); ?></div>
+                    <?php endif; ?>
+                    <?php if ($error): ?>
+                        <div class="alert-danger"><?= htmlspecialchars($error); ?></div>
+                    <?php endif; ?>
+
+                    <form method="post" enctype="multipart/form-data">
+                        <div class="row g-3">
+                            <div class="col-md-12 text-center">
+                                <img src="<?= htmlspecialchars($user['profile_image']); ?>" id="profilePreview" class="avatar-preview mb-3" alt="Profile Picture">
+                                <input type="file" name="profile_image" id="profileImgInput" class="form-control" style="max-width:300px;margin:auto;">
+                                <small class="text-muted">File size: max 1 MB (JPEG, PNG)</small>
+                                <hr>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Username</label>
+                                <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($user['username']); ?>">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Name</label>
+                                <input type="text" name="name" class="form-control" value="<?= htmlspecialchars($user['name']); ?>">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" value="<?= htmlspecialchars($user['email']); ?>" readonly>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" name="phone_number" class="form-control" value="<?= htmlspecialchars($user['phone_number'] ?? ''); ?>">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Street Address</label>
+                                <input type="text" name="street_address" class="form-control" value="<?= htmlspecialchars($user['street_address'] ?? ''); ?>">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">City / Municipality</label>
+                                <input type="text" name="city" class="form-control" value="<?= htmlspecialchars($user['city'] ?? ''); ?>">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Zip Code</label>
+                                <input type="text" name="zip_code" class="form-control" value="<?= htmlspecialchars($user['zip_code'] ?? ''); ?>">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Gender</label><br>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender" value="Male" <?= ($user['gender'] ?? '') == 'Male' ? 'checked' : '' ?>>
+                                    <label class="form-check-label">Male</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender" value="Female" <?= ($user['gender'] ?? '') == 'Female' ? 'checked' : '' ?>>
+                                    <label class="form-check-label">Female</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="gender" value="Other" <?= ($user['gender'] ?? '') == 'Other' ? 'checked' : '' ?>>
+                                    <label class="form-check-label">Other</label>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" name="birth_date" class="form-control" value="<?= htmlspecialchars($user['birth_date'] ?? ''); ?>">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Current Password</label>
+                                <input type="password" name="current_password" class="form-control" placeholder="Enter current password to change new one">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">New Password</label>
+                                <input type="password" name="new_password" class="form-control" placeholder="Leave blank to keep current password">
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button type="submit" name="update_account" class="btn btn-save">Save Changes</button>
+                        </div>
+                    </form>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label">Name</label>
-                    <input type="text" name="name" class="form-control" 
-                            value="<?php echo htmlspecialchars($user['name']); ?>">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" 
-                            value="<?php echo htmlspecialchars($user['email']); ?>">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">New Password</label>
-                    <input type="password" name="password" class="form-control" 
-                            placeholder="Leave blank to keep current">
-                </div>
-                <button type="submit" name="update_account" class="btn btn-primary">
-                    Update Account
-                </button>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
-<?php 
-    // Variables for the modal content
-    $modal_title = "✅ Profile Updated";
-    $modal_message = "Your account details have been successfully updated!";
-    $modal_name = htmlspecialchars($user['name'] ?? '');
-    $modal_email = htmlspecialchars($user['email'] ?? '');
-?>
+<script>
+document.getElementById("profileImgInput").addEventListener("change", function(event) {
+    const img = document.getElementById("profilePreview");
+    img.src = URL.createObjectURL(event.target.files[0]);
+});
+</script>
 
-<?php if (!empty($success)): // Check if the PHP success message is set ?>
-
-    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="successModalLabel"><?= $modal_title ?></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <p>Great job, <strong><?= $modal_name ?></strong>!</p>
-                    <p><?= $modal_message ?></p>
-                    <p class="small text-muted">New Email: *<?= $modal_email ?>*</p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // Use an immediately invoked function to ensure the code runs after DOM is ready
-        document.addEventListener('DOMContentLoaded', function() {
-            const successModalElement = document.getElementById('successModal');
-            if (successModalElement) {
-                // Initialize a new Bootstrap Modal object
-                const successModal = new bootstrap.Modal(successModalElement);
-                // Show the modal
-                successModal.show();
-            }
-        });
-    </script>
-
-<?php endif; ?>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

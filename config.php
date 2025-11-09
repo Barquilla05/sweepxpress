@@ -92,16 +92,11 @@ function h($s) {
 // Make sure Composer dependencies exist (for Google/Facebook SDK)
 require_once __DIR__ . '/vendor/autoload.php';
 
-// config.example.php — safe example (commit this)
-$clientID = getenv('GOOGLE_CLIENT_ID');
-$clientSecret = getenv('GOOGLE_CLIENT_SECRET');
-define('GOOGLE_REDIRECT_URI', 'http://localhost/sweepxpress/google_callback.php');
 
-// config.example.php — safe example (commit this)
-define('FACEBOOK_APP_ID', getenv('FACEBOOK_APP_ID'));
-define('FACEBOOK_APP_SECRET', getenv('FACEBOOK_APP_SECRET'));
-define('FACEBOOK_REDIRECT_URI', 'http://localhost/sweepxpress/facebook_callback.php');
-
+// Include OAuth credentials if file exists
+if (file_exists(__DIR__ . '/config_oauth.php')) {
+    require_once __DIR__ . '/config_oauth.php';
+}
 
 // --------------------------------------------------------------------
 // END OF CONFIG

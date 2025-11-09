@@ -142,7 +142,7 @@ require_once __DIR__ . '/../config.php';
                     ?>
                     <li class="nav-item me-3 d-flex align-items-center">
                         <img src="<?php echo $profileImage; ?>" alt="Profile" class="profile-img">
-                        <span class="navbar-text text-light">Hi, <?php echo h($_SESSION['user']['name']); ?></span>
+                        <span class="navbar-text text-light">Hi, <?php echo h($_SESSION['user']['username']); ?></span>
                     </li>
 
                     <?php if (!is_admin() && !is_supplier()): // Only show cart to regular users ?>

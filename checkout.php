@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $province = trim($_POST['province'] ?? '');
         $notes = trim($_POST['notes'] ?? '');
         $address = "$street_address, $barangay, $city, $province"; 
-        $payment_method = $_POST['payment_method'] ?? 'COD';
+        $payment_method = 'COD';
         $order_type = 'B2C'; 
 
         if ($name === '' || $street_address === '' || $barangay === '' || $city === '' || $province === '') {
@@ -232,52 +232,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <?php if ($success): ?>
-        <div class="alert alert-success shadow-sm p-4 rounded-3">
-            <h4 class="alert-heading mb-2"><i class="bi bi-check-circle"></i> Order placed successfully!</h4>
-            <hr>
-            <?php 
-            $method = $payment_method; 
-            // E-WALLETS
-            if (in_array($method, ['GCash', 'PAYMAYA', 'MAYA'])): ?>
-                <p>You chose **<?= h($method) ?>**. Please complete the transfer to the details below. Your order will be processed once we confirm receipt of payment.</p>
-                <div class="alert alert-info border-start border-4 border-success mt-3">
-                    <p><strong>E-Wallet:</strong> GCash / Paymaya / Maya</p>
-                    <p><strong>Account Name:</strong> SweepxPress Payments</p>
-                    <p><strong>Account Number/Phone:</strong> 0917-123-4567</p>
-                </div>
-            <?php 
-            // BANK TRANSFERS
-            elseif (in_array($method, ['BDO', 'BPI', 'METRO BANK', 'GO TYME'])): ?>
-                <p>You chose **<?= h($method) ?>**. Please make a bank transfer to our **<?= h($method) ?>** account below. Your order status is **Awaiting Payment**.</p>
-                <div class="alert alert-info border-start border-4 border-primary mt-3">
-                    <p><strong>Bank:</strong> <?= h($method) ?></p>
-                    <p><strong>Account Name:</strong> SweepxPress Retail</p>
-                    <p><strong>Account Number:</strong> 123456789 (Use this dummy number for all banks)</p>
-                </div>
-            <?php 
-            // REMITTANCE
-            elseif ($method === 'Cebuana'): ?>
-                <p>You chose **Cebuana Lhuillier**. Please send the payment to the details below. Your order will be processed upon confirmation.</p>
-                <div class="alert alert-info border-start border-4 border-warning mt-3">
-                    <p><strong>Receiver Name:</strong> Juan Dela Cruz</p>
-                    <p><strong>Phone Number:</strong> 0917-123-4567</p>
-                    <p><strong>Branch:</strong> Any Cebuana Lhuillier Branch</p>
-                </div>
-            <?php 
-            // CARDS
-            elseif (in_array($method, ['MASTER CARD', 'VISA'])): ?>
-                <p>You chose **<?= h($method) ?>**. Your payment is being **Processed** securely. You will receive an email confirmation shortly.</p>
-            <?php 
-            // COD
-            elseif ($method === 'COD'): ?>
-                <p>You chose **Cash on Delivery**. Please prepare the exact payment amount upon delivery.</p>
-            <?php endif; ?>
-            <div class="text-center mt-4">
-                <a href="/sweepxpress/index.php" class="btn btn-primary btn-lg">Back to Shop</a>
-            </div>
-        </div>
+    <div class="alert alert-success shadow-sm p-4 rounded-3">
+        <h4 class="alert-heading mb-2"><i class="bi bi-check-circle"></i> Order placed successfully!</h4>
+        <hr>
+        <p>You selected <strong>Cash on Delivery</strong>. Please prepare the exact amount upon delivery.</p>
 
-    <?php else: ?>
+        <div class="text-center mt-4">
+            <a href="/sweepxpress/index.php" class="btn btn-primary btn-lg">Back to Shop</a>
+        </div>
+    </div>
+<?php else: ?>
+
         <?= $message ?>
         <form method="post" class="row g-4">
             <input type="hidden" name="csrf_token" value="<?= h($csrf_token) ?>">
@@ -323,18 +288,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php 
                             // Using your correct image paths
                             $payment_options = [
-                                'GCash' => ['type' => 'E-Wallet', 'image' => 'assets/gcash-logo.png'],
-                                'PAYMAYA' => ['type' => 'E-Wallet', 'image' => 'assets/paymaya.png'],
-                                'MAYA' => ['type' => 'E-Wallet', 'image' => 'assets/maya.jpg'], 
-                                'BDO' => ['type' => 'Bank', 'image' => 'assets/bdo.png'],
-                                'BPI' => ['type' => 'Bank', 'image' => 'assets/bpi.png'],
-                                'METRO BANK' => ['type' => 'Bank', 'image' => 'assets/metrobank.jpg'],
-                                'GO TYME' => ['type' => 'Bank', 'image' => 'assets/Go-tyme.png'],
-                                'Cebuana' => ['type' => 'Remittance', 'image' => 'assets/Cebuana_Lhuillier_Logo.png'],
-                                'MASTER CARD' => ['type' => 'Card', 'image' => 'assets/MasterCard_Logo.svg.png'],
-                                'VISA' => ['type' => 'Card', 'image' => 'assets/visa.png'],
-                                'COD' => ['type' => 'COD', 'image' => 'assets/Cash.png'],
-                            ];
+                            'COD' => ['type' => 'COD', 'image' => 'assets/Cash.png'],
+                        ];
+
 
                             $current_selection = $_POST['payment_method'] ?? 'COD';
 
@@ -439,47 +395,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Get all radio buttons and instruction divs
-    const paymentRadios = document.querySelectorAll('input[name="payment_method"]');
-    const eWalletDetails = document.getElementById('e-wallet-details');
-    const bankDetails = document.getElementById('bank-transfer-details');
-    const remittanceDetails = document.getElementById('remittance-details');
-    const cardProcessing = document.getElementById('card-processing-details');
-    const codDetails = document.getElementById('cod-details');
-    
-    const allInstructionDivs = [eWalletDetails, bankDetails, remittanceDetails, cardProcessing, codDetails];
-
-    function toggleDetails() {
-        // Hide all instruction details first
-        allInstructionDivs.forEach(div => div.classList.add('d-none'));
-
-        // Find the checked radio button
-        const checkedRadio = Array.from(paymentRadios).find(radio => radio.checked);
-        
-        if (!checkedRadio) return;
-        
-        const method = checkedRadio.value;
-
-        // Show the relevant instruction details based on the payment group
-        if (['GCash', 'PAYMAYA', 'MAYA'].includes(method)) { 
-            eWalletDetails.classList.remove('d-none');
-        } else if (['BDO', 'BPI', 'METRO BANK', 'GO TYME'].includes(method)) {
-            bankDetails.classList.remove('d-none');
-        } else if (method === 'Cebuana') {
-            remittanceDetails.classList.remove('d-none');
-        } else if (['MASTER CARD', 'VISA'].includes(method)) {
-            cardProcessing.classList.remove('d-none');
-        } else if (method === 'COD') {
-            codDetails.classList.remove('d-none');
-        }
-    }
-
-    // Initialize state (for when the page loads with a selection from POST or default COD)
-    toggleDetails();
-    
-    // Add event listeners to all radio buttons
-    paymentRadios.forEach(radio => {
-        radio.addEventListener('change', toggleDetails);
-    });
+    document.getElementById('cod-details').classList.remove('d-none');
 });
 </script>

@@ -1,172 +1,173 @@
 <?php 
 require_once __DIR__ . '/../includes/auth.php';
-// Assuming $pdo (PDO connection) is available from a shared include, 
-// or you need to establish it here if not in 'auth.php' or 'header.php'.
 require_once __DIR__ . '/../includes/header.php';
 
 $message = '';
 
-// --- DELETE LOGIC ---
+// --- form handling logic ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    $name = trim($_POST['name'] ?? '');
+    $price = filter_var($_POST['price'] ?? 0, FILTER_VALIDATE_FLOAT, ['options' => ['min_range' => 0]]);
+    $desc = trim($_POST['description'] ?? '');
+    $category = trim($_POST['category'] ?? '');
+
+    if ($name === '' || $price === false || $desc === '' || $category === '') {
+        $message = '<div class="alert alert-danger">All fields are required, including category.</div>';
+    } else {
+        $imgPath = null;
+        if (!empty($_FILES['image']['name'])) {
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+            $fileInfo = finfo_open(FILEINFO_MIME_TYPE);
+            $detectedType = finfo_file($fileInfo, $_FILES['image']['tmp_name']);
+            finfo_close($fileInfo);
+
+            if (in_array($detectedType, $allowedTypes) && $_FILES['image']['size'] < 2000000) {
+                $filename = time() . '_' . preg_replace('/[^a-zA-Z0-9_.-]/', '', $_FILES['image']['name']);
+                $uploadDir = realpath(__DIR__ . '/../uploads/');
+                if ($uploadDir === false) {
+                    $message = '<div class="alert alert-danger">Upload directory does not exist or is not accessible.</div>';
+                } else {
+                    $destination = $uploadDir . DIRECTORY_SEPARATOR . $filename;
+                    if (move_uploaded_file($_FILES['image']['tmp_name'], $destination)) {
+                        $imgPath = '/sweepxpress/uploads/' . $filename;
+                    } else {
+                        $message = '<div class="alert alert-danger">Error uploading image. Check permissions of the uploads folder.</div>';
+                    }
+                }
+            } else {
+                $message = '<div class="alert alert-warning">Invalid file type or size. Only JPG, PNG, or GIF under 2MB allowed.</div>';
+            }
+        }
+
+        if ($action === 'create' && empty($message)) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO products (name, description, price, category, image_path) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$name, $desc, $price, $category, $imgPath]);
+                $message = '<div class="alert alert-success">✅ Product added successfully.</div>';
+            } catch (PDOException $e) {
+                $message = '<div class="alert alert-danger">Database error: ' . htmlspecialchars($e->getMessage()) . '</div>';
+            }
+        }
+    }
+}
+
+// DELETE
 if (isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
     if ($id > 0) {
         try {
-            // 1. Delete associated images (files and records) from `product_images`
-            $stmt = $pdo->prepare("SELECT image_path FROM product_images WHERE product_id = ?");
-            $stmt->execute([$id]);
-            $extraImages = $stmt->fetchAll();
-
-            foreach ($extraImages as $image) {
-                // Compute server file path
-                $relative = ltrim(str_replace('/sweepxpress/', '', $image['image_path']), '/');
-                $filePath = realpath(__DIR__ . '/../') . DIRECTORY_SEPARATOR . $relative;
-                if ($filePath && file_exists($filePath)) {
-                    @unlink($filePath);
-                }
-            }
-            // Delete records from product_images table
-            $pdo->prepare("DELETE FROM product_images WHERE product_id = ?")->execute([$id]);
-
-            // 2. Delete primary image file (if one exists)
             $stmt = $pdo->prepare("SELECT image_path FROM products WHERE id = ?");
             $stmt->execute([$id]);
             $product = $stmt->fetch();
 
             if ($product && !empty($product['image_path'])) {
-                // Compute server file path from web path
-                $relative = ltrim(str_replace('/sweepxpress/', '', $product['image_path']), '/');
-                $filePath = realpath(__DIR__ . '/../') . DIRECTORY_SEPARATOR . $relative;
-                if ($filePath && file_exists($filePath) && is_file($filePath)) {
-                    @unlink($filePath);
-                }
+                $imageFilePath = __DIR__ . '/..' . str_replace('/sweepxpress', '', $product['image_path']);
+                if (file_exists($imageFilePath)) unlink($imageFilePath);
             }
 
-            // 3. Delete the product record from the `products` table
             $stmt = $pdo->prepare("DELETE FROM products WHERE id = ?");
             $stmt->execute([$id]);
-            $message = '<div class="alert alert-success">🗑 Product and ' . count($extraImages) . ' image(s) deleted successfully.</div>';
+            $message = '<div class="alert alert-success">🗑 Product deleted successfully.</div>';
         } catch (PDOException $e) {
             $message = '<div class="alert alert-danger">Database error: ' . htmlspecialchars($e->getMessage()) . '</div>';
         }
-    } else {
-        $message = '<div class="alert alert-danger">Invalid product ID for deletion.</div>';
     }
 }
 
-// Display messages (success/error from deletion)
 if (!empty($message)) echo $message;
 
-// Fetch all products
-try {
-    $items = $pdo->query("SELECT * FROM products ORDER BY id DESC")->fetchAll();
-    $productCount = count($items);
-} catch (PDOException $e) {
-    echo '<div class="alert alert-danger">Error fetching products: ' . htmlspecialchars($e->getMessage()) . '</div>';
-    $items = [];
-    $productCount = 0;
-}
+// Fetch products
+$items = $pdo->query("SELECT * FROM products ORDER BY id DESC")->fetchAll();
 ?>
 
-<style>
-    /* Edit Button (Yellow) */
-    .btn-custom-edit {
-        background-color: #ffc107 !important; /* Yellow */
-        border-color: #ffc107 !important;
-        color: #212529 !important; /* Dark text for contrast */
-    }
-    .btn-custom-edit:hover {
-        background-color: #e0a800 !important;
-        border-color: #e0a800 !important;
-    }
+<div class="container my-5">
+  <h1 class="mb-4">🧾 Product Management</h1>
 
-    /* Delete Button (Red) */
-    .btn-custom-delete {
-        background-color: #dc3545 !important; /* Red */
-        border-color: #dc3545 !important;
-        color: #ffffff !important; /* White text for contrast */
-    }
-    .btn-custom-delete:hover {
-        background-color: #c82333 !important;
-        border-color: #c82333 !important;
-    }
-</style>
+  <div class="card shadow-sm mb-5">
+    <div class="card-header bg-primary text-white">Add New Product</div>
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="create">
 
-<div class="container-fluid min-vh-100 bg-light px-0 py-4"> 
-    
-    <div class="d-flex justify-content-between align-items-center mb-4 px-4 px-lg-5"> 
-        <h1 class="display-6 fw-bold text-primary">
-            Product Inventory
-        </h1>
-        <a href="add_product.php" class="btn btn-primary btn-lg shadow-sm">
-            <i class="fas fa-plus me-2"></i> Add New Product
-        </a>
-    </div>
-    
-    <div class="card shadow-lg border-0 w-100"> 
-        <div class="card-header bg-white border-bottom py-3 px-4 px-lg-5">
-            <h3 class="mb-0 text-dark">
-                All Products <span class="badge bg-primary text-white rounded-pill ms-2"><?php echo $productCount; ?></span>
-            </h3>
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input type="text" name="name" class="form-control" required>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle mb-0">
-                    <thead class="table-dark">
-                        <tr>
-                            <th scope="col" style="width: 5%;" class="ps-4 ps-lg-5">ID</th>
-                            <th scope="col" style="width: 10%;">Image</th>
-                            <th scope="col" style="width: 45%;">Name</th>
-                            <th scope="col" style="width: 15%;">Price</th>
-                            <th scope="col" style="width: 25%;" class="pe-4 pe-lg-5">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($items)): ?>
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-5">
-                                    <i class="fas fa-box-open fa-2x d-block mb-2"></i> 
-                                    No products found in the inventory.
-                                </td>
-                            </tr>
-                        <?php else: ?>
-                            <?php foreach ($items as $product): ?>
-                            <tr>
-                                <td class="text-muted ps-4 ps-lg-5"><?php echo htmlspecialchars((string)$product['id']); ?></td>
-                                <td>
-                                    <?php if ($product['image_path']): ?>
-                                        <img src="<?php echo htmlspecialchars($product['image_path']); ?>" 
-                                            alt="<?php echo htmlspecialchars($product['name']); ?>" 
-                                            class="img-fluid rounded" style="max-width: 50px; height: auto;">
-                                    <?php else: ?>
-                                        <span class="text-muted small">N/A</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="fw-bold"><?php echo htmlspecialchars($product['name']); ?></td>
-                                <td>
-                                    <span class="badge bg-success-subtle text-success py-2 px-3">
-                                        ₱<?php echo htmlspecialchars(number_format($product['price'], 2)); ?>
-                                    </span>
-                                </td>
-                                <td class="pe-4 pe-lg-5">
-                                    <div class="d-flex flex-wrap gap-2"> 
-                                        <a href="edit_product.php?id=<?php echo htmlspecialchars((string)$product['id']); ?>" 
-                                            class="btn btn-sm btn-custom-edit">
-                                            <i class="fas fa-edit"></i> Edit
-                                        </a>
-                                        <a href="?delete=<?php echo htmlspecialchars((string)$product['id']); ?>" 
-                                            class="btn btn-sm btn-custom-delete"
-                                            onclick="return confirm('Confirm deletion of: <?php echo htmlspecialchars(addslashes($product['name'])); ?>?')">
-                                            <i class="fas fa-trash-alt"></i> Delete
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
+
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" rows="3" required></textarea>
         </div>
+
+        <div class="mb-3">
+          <label class="form-label">Price (PHP)</label>
+          <input type="number" name="price" class="form-control" step="0.01" min="0" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select name="category" class="form-select" required>
+            <option value="">-- Select Category --</option>
+            <option value="Cleaning Agents">Cleaning Agents</option>
+            <option value="Cleaning Tools">Cleaning Tools</option>
+            <option value="Adhesives & Tapes">Adhesives & Tapes</option>
+            <option value="Floor & Surface Care">Floor & Surface Care</option>
+            <option value="Equipment">Equipment</option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Product Image</label>
+          <input type="file" name="image" class="form-control" accept="image/*">
+        </div>
+
+        <button type="submit" class="btn btn-success">➕ Add Product</button>
+      </form>
     </div>
+  </div>
+
+  <h3 class="mb-3">All Products</h3>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Image</th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($items as $product): ?>
+        <tr>
+          <td><?php echo htmlspecialchars((string)$product['id']); ?></td>
+          <td>
+            <?php if ($product['image_path']): ?>
+              <img src="<?php echo htmlspecialchars($product['image_path']); ?>" 
+                   alt="<?php echo htmlspecialchars($product['name']); ?>" 
+                   class="img-thumbnail" style="max-width: 60px;">
+            <?php else: ?>
+              <span class="text-muted">No image</span>
+            <?php endif; ?>
+          </td>
+          <td><?php echo htmlspecialchars($product['name']); ?></td>
+          <td><?php echo htmlspecialchars($product['category'] ?? '—'); ?></td>
+          <td>₱<?php echo htmlspecialchars(number_format($product['price'], 2)); ?></td>
+          <td>
+            <a href="edit_product.php?id=<?php echo htmlspecialchars((string)$product['id']); ?>" 
+               class="btn btn-sm btn-primary">✏ Edit</a>
+            <a href="?delete=<?php echo htmlspecialchars((string)$product['id']); ?>" 
+               class="btn btn-sm btn-danger"
+               onclick="return confirm('Are you sure you want to delete this product?')">🗑 Delete</a>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
 </div>
+
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

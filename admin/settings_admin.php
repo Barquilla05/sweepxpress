@@ -1,182 +1,175 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../includes/header.php';
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 if (!is_logged_in()) {
     header("Location: /sweepxpress/login.php");
     exit;
 }
+
 if (!is_admin()) {
     header("Location: /sweepxpress/index.php");
     exit;
 }
 
-$adminId = $_SESSION['user']['id'];
+// ✅ Get Admin ID
+$adminId = $_SESSION['user']['id'] ?? null;
+if (!$adminId) { header("Location: /sweepxpress/login.php"); exit; }
 
-// Kunin current user info
+// ✅ Fetch Admin Data
 $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
 $stmt->execute([$adminId]);
 $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Initialize $success for display
-$success = null;
+if (!$admin) { die("Admin record not found."); }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_account'])) {
+// ✅ Update Profile (username, email, phone, image)
+if (isset($_POST['update_profile'])) {
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
-    $password = trim($_POST['password']);
+    $phone = trim($_POST['phone']);
 
-    // Default image path kung walang upload
-    // 💡 Note: Use null coalescing for safety even here, though fetching from DB might make it safe.
-    $profileImagePath = $admin['profile_image'] ?? null; 
+    $profile_image = $admin['profile_image'];
 
-    // Handle profile image upload
     if (!empty($_FILES['profile_image']['name'])) {
-        $uploadDir = __DIR__ . '/../uploads/'; // General upload directory
-        $profileUploadDir = $uploadDir . 'profiles/'; // Use a specific sub-directory if needed, or keep it general as per your original code
-        
-        // Ensure the directory exists
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
-        }
+        $uploadDir = __DIR__ . '/../uploads/admin/';
+        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-        // Generate a unique filename
-        $filename = "profile_" . $adminId . "_" . time() . "." . pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION);
-        $targetFile = $uploadDir . $filename;
+        $newFile = time() . '_' . basename($_FILES['profile_image']['name']);
+        $uploadFile = $uploadDir . $newFile;
 
-        // Ensure the uploaded file is an image before moving (basic check)
-        if (getimagesize($_FILES['profile_image']['tmp_name']) !== false) {
-            if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $targetFile)) {
-                $profileImagePath = "/sweepxpress/uploads/" . $filename;
-            }
+        if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadFile)) {
+            $profile_image = "/sweepxpress/uploads/admin/" . $newFile;
         }
     }
 
-    // --- Dynamic DB Update Logic ---
-    $updates = ['name = ?', 'email = ?'];
-    $params = [$name, $email];
-    
-    // Add image update if the path was changed (uploaded or set from DB default)
-    if ($profileImagePath !== null) {
-         $updates[] = 'profile_image = ?';
-         $params[] = $profileImagePath;
-    }
-    
-    // Handle Password
-    if (!empty($password)) {
-        // 🔑 Security: Always hash the password
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT); // Use PASSWORD_DEFAULT instead of BCRYPT
-        $updates[] = 'password_hash = ?';
-        $params[] = $passwordHash;
-    }
+    // ✅ Final Update Query
+    $sql = "UPDATE users SET name = ?, email = ?, phone = ?, profile_image = ? WHERE id = ?";
+    $params = [$name, $email, $phone, $profile_image, $adminId];
 
-    $params[] = $adminId; // Add admin ID for the WHERE clause
-
-    $sql = "UPDATE users SET " . implode(', ', $updates) . " WHERE id = ?";
-    
-    // Execute DB Update
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
 
-    // --- Modal Trigger ---
-    $success = "Account updated successfully!"; // Set flag to trigger the modal
+    // ✅ Refresh session after update
+    $newData = $pdo->prepare("SELECT * FROM users WHERE id=?");
+    $newData->execute([$adminId]);
+    $_SESSION['user'] = $newData->fetch(PDO::FETCH_ASSOC);
 
-    // Refresh data after update (using $admin)
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE id = ?");
-    $stmt->execute([$adminId]);
-    $admin = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    // 🔑 Update session
-    $_SESSION['user']['name'] = $admin['name'];
-    $_SESSION['user']['email'] = $admin['email'];
-    $_SESSION['user']['profile_image'] = $admin['profile_image'] ?? null;
+    echo "<script>window.location.href='settings_admin.php?tab=general';</script>";
+    exit;
 }
 
-// Ensure the image path used for display is safe
+
+// ✅ Change Password
+if (isset($_POST['change_password'])) {
+    $current = $_POST['current_password'];
+    $newpass = $_POST['new_password'];
+    $confirm = $_POST['confirm_password'];
+
+    if (!password_verify($current, $admin['password'])) {
+        echo "<script>alert('Incorrect current password.');</script>";
+    } elseif ($newpass !== $confirm) {
+        echo "<script>alert('Passwords do not match.');</script>";
+    } else {
+        $hash = password_hash($newpass, PASSWORD_DEFAULT);
+        $stmt = $pdo->prepare("UPDATE users SET password=? WHERE id=?");
+        $stmt->execute([$hash, $adminId]);
+        echo "<script>alert('Password updated successfully!');location.href='settings_admin.php?tab=general';</script>";
+    }
+}
+
 $displayImagePath = htmlspecialchars($admin['profile_image'] ?? '/sweepxpress/assets/default-avatar.png');
-
-
-require_once __DIR__ . '/../includes/header.php';
+$tab = $_GET['tab'] ?? 'general';
 ?>
 
-<div class="container mt-4">
-    <h1 class="mb-4"> Admin Settings</h1>
+<style>
+.settings-wrapper{display:flex;min-height:90vh;font-family:Inter,sans-serif;}
+.settings-sidebar{width:240px;background:#fafafa;border-right:1px solid #ddd;padding:25px 15px;}
+.settings-sidebar h2{font-size:18px;font-weight:600;margin-bottom:15px;}
+.settings-sidebar a{display:block;padding:12px 15px;margin-bottom:6px;color:#222;text-decoration:none;border-radius:7px;transition:.2s;}
+.settings-sidebar a:hover,.settings-sidebar a.active{background:#e7f0ff;}
+.settings-content{flex:1;padding:40px 45px;}
+.profile-section{display:flex;align-items:center;gap:18px;margin-bottom:35px;}
+.profile-section img{width:95px;height:95px;object-fit:cover;border-radius:50%;border:2px solid #ddd;}
+.btn-small,.edit-btn{font-size:13px;border:1px solid #aaa;padding:6px 10px;border-radius:6px;background:#fff;cursor:pointer;}
+.btn-small:hover,.edit-btn:hover{background:#eee;}
+.info-row{padding:18px 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;}
+.label{font-size:13px;color:#777;}
+.value{font-size:15px;font-weight:500;}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#00000060;justify-content:center;align-items:center;}
+.modal-content{background:white;padding:20px;width:350px;border-radius:10px;}
+.modal-content input{width:100%;padding:8px;margin-bottom:10px;}
+.btn-cancel{background:#ddd;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;}
+</style>
 
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-primary text-white">👤 My Account</div>
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                <div class="mb-3 text-center">
-                    <img src="<?= $displayImagePath ?>" 
-                            alt="Profile" class="rounded-circle" width="100" height="100">
-                </div>
+<div class="settings-wrapper">
+    <div class="settings-sidebar">
+        <h2>Settings</h2>
+        <a href="?tab=general" class="<?= $tab=='general'?'active':'' ?>">General</a>
+    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Profile Image</label>
-                    <input type="file" class="form-control" name="profile_image" accept="image/*">
-                </div>
+    <div class="settings-content">
 
-                <div class="mb-3">
-                    <label class="form-label">Name</label>
-                    <input type="text" class="form-control" name="name" value="<?= htmlspecialchars($admin['name']) ?>">
-                </div>
+    <?php if($tab=='general'): ?>
+    <div class="profile-section">
+        <img src="<?= $displayImagePath ?>">
+        <button class="btn-small" onclick="openProfileModal()">Change Profile</button>
+    </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" name="email" value="<?= htmlspecialchars($admin['email']) ?>">
-                </div>
+    <div class="info-row"><div><div class="label">Username</div><div class="value"><?= htmlspecialchars($admin['name']) ?></div></div><button class="edit-btn" onclick="openProfileModal()">Edit</button></div>
+    <div class="info-row"><div><div class="label">Email</div><div class="value"><?= htmlspecialchars($admin['email']) ?></div></div><button class="edit-btn" onclick="openProfileModal()">Edit</button></div>
+    <div class="info-row"><div><div class="label">Phone</div><div class="value"><?= htmlspecialchars($admin['phone'] ?? 'No number saved') ?></div></div><button class="edit-btn" onclick="openProfileModal()">Edit</button></div>
+    <div class="info-row"><div><div class="label">Password</div><div class="value">********</div></div><button class="edit-btn" onclick="openPasswordModal()">Change</button></div>
+    <?php endif; ?>
 
-                <div class="mb-3">
-                    <label class="form-label">New Password</label>
-                    <input type="password" class="form-control" name="password" placeholder="Leave blank to keep current">
-                </div>
-
-                <button type="submit" name="update_account" class="btn btn-success">Update Account</button>
-            </form>
-        </div>
     </div>
 </div>
 
-<?php 
-    // Variables for the modal content
-    $modal_title = "✅ Admin Profile Updated";
-    $modal_message = "Your administrator account details have been successfully updated!";
-    $modal_name = htmlspecialchars($admin['name'] ?? 'Admin');
-    $modal_email = htmlspecialchars($admin['email'] ?? '');
-?>
+<!-- Profile Modal -->
+<div id="profileModal" class="modal">
+  <div class="modal-content">
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="update_profile">
+        <h3>Edit Profile</h3>
 
-<?php if (!empty($success)): // Check if the PHP success message is set ?>
+        <input type="text" name="name" value="<?= htmlspecialchars($admin['name']) ?>" placeholder="Username">
+        <input type="email" name="email" value="<?= htmlspecialchars($admin['email']) ?>" placeholder="Email">
+        <input type="text" name="phone" value="<?= htmlspecialchars($admin['phone'] ?? '') ?>" placeholder="Phone">
+        <input type="file" name="profile_image">
 
-    <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title" id="successModalLabel"><?= $modal_title ?></h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center py-4">
-                    <p>Great job, <strong><?= $modal_name ?></strong>!</p>
-                    <p><?= $modal_message ?></p>
-                    <p class="small text-muted">New Email: *<?= $modal_email ?>*</p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-success px-4" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
+        <button type="submit">Save</button>
+        <button type="button" class="btn-cancel" onclick="closeProfileModal()">Cancel</button>
+    </form>
+  </div>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const successModalElement = document.getElementById('successModal');
-            if (successModalElement) {
-                // Initialize a new Bootstrap Modal object
-                const successModal = new bootstrap.Modal(successModalElement);
-                // Show the modal
-                successModal.show();
-            }
-        });
-    </script>
+<!-- Password Modal -->
+<div id="passwordModal" class="modal">
+  <div class="modal-content">
+    <form method="POST">
+        <input type="hidden" name="change_password">
+        <h3>Change Password</h3>
 
-<?php endif; ?>
+        <input type="password" name="current_password" placeholder="Current Password" required>
+        <input type="password" name="new_password" placeholder="New Password" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+
+        <button type="submit">Update Password</button>
+        <button type="button" class="btn-cancel" onclick="closePasswordModal()">Cancel</button>
+    </form>
+  </div>
+</div>
+
+<script>
+function openProfileModal(){ document.getElementById('profileModal').style.display='flex'; }
+function closeProfileModal(){ document.getElementById('profileModal').style.display='none'; }
+function openPasswordModal(){ document.getElementById('passwordModal').style.display='flex'; }
+function closePasswordModal(){ document.getElementById('passwordModal').style.display='none'; }
+</script>
+
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
