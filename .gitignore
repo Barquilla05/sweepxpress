@@ -1,0 +1,4 @@
+# Ignore sensitive config file
+config_oauth.php
+vendor/
+.env
