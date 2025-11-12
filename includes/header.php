@@ -135,14 +135,32 @@ require_once __DIR__ . '/../config.php';
 
                 <?php if (is_logged_in()): ?>
                     <?php 
-                        // Get profile image or default
-                        $profileImage = !empty($_SESSION['user']['profile_image']) 
-                            ? h($_SESSION['user']['profile_image']) 
-                            : '/sweepxpress/assets/profile-icon.jpg';
+                        // --- CODE FOR USERNAME / NAME FALLBACK STARTS HERE ---
+                        $displayName = 'User'; // Default fallback
+                        
+                        // Tiyakin na ang $_SESSION['user'] ay may data.
+                        if (isset($_SESSION['user'])) {
+                            // 1. Unang subukan ang 'username'.
+                            if (isset($_SESSION['user']['username']) && !empty($_SESSION['user']['username'])) {
+                                $displayName = $_SESSION['user']['username'];
+                            } 
+                            // 2. Kung walang 'username', subukan ang 'name' (full name).
+                            elseif (isset($_SESSION['user']['name']) && !empty($_SESSION['user']['name'])) {
+                                $displayName = $_SESSION['user']['name'];
+                            }
+                            // 3. Get profile image or default
+                            $profileImage = !empty($_SESSION['user']['profile_image']) 
+                                ? h($_SESSION['user']['profile_image']) 
+                                : '/sweepxpress/assets/profile-icon.jpg';
+                        } else {
+                            // Fallback image if session['user'] isn't even set (shouldn't happen if is_logged_in() is true)
+                            $profileImage = '/sweepxpress/assets/profile-icon.jpg';
+                        }
+                        // --- CODE FOR USERNAME / NAME FALLBACK ENDS HERE ---
                     ?>
                     <li class="nav-item me-3 d-flex align-items-center">
                         <img src="<?php echo $profileImage; ?>" alt="Profile" class="profile-img">
-                        <span class="navbar-text text-light">Hi, <?php echo h($_SESSION['user']['username']); ?></span>
+                        <span class="navbar-text text-light">Hi, <?php echo h($displayName); ?></span>
                     </li>
 
                     <?php if (!is_admin() && !is_supplier()): // Only show cart to regular users ?>
@@ -160,7 +178,7 @@ require_once __DIR__ . '/../config.php';
                                 <i class="bi bi-cart-fill fs-5"></i>
                                 
                                 <span id="cart-badge" 
-                                      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white <?php echo $badge_visibility_class; ?>">
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger text-white <?php echo $badge_visibility_class; ?>">
                                     <span id="cart-badge-count"><?php echo $cartCount; ?></span>
                                     <span class="visually-hidden">items in cart</span>
                                 </span>

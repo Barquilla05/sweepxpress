@@ -1,4 +1,4 @@
-<!-- 🌿 SweepXpress Elegant Footer -->
+<!-- 🌿 SweepXpress Blue Theme Footer -->
 <footer class="site-footer">
     <div class="footer-container">
         <div class="footer-grid">
@@ -49,13 +49,13 @@
     </div>
 </footer>
 
-<!-- 🌈 Modern Footer Styling -->
+<!-- 🌈 Blue Footer Styling to Match Header -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
 
 .site-footer {
-    background: linear-gradient(135deg, #007a47, #00b37e);
-    color: #f8f8f8;
+    background: linear-gradient(135deg, #3366ff, #5588ff); /* Blue gradient same as header accent */
+    color: #ffffff;
     padding: 40px 0 20px;
     font-family: 'Poppins', sans-serif;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
@@ -88,7 +88,7 @@
     bottom: -5px;
     width: 40px;
     height: 2px;
-    background-color: #8cffc1;
+    background-color: #99bbff; /* Lighter blue accent line */
     border-radius: 2px;
 }
 
@@ -108,14 +108,14 @@
 }
 
 .footer-column ul li a {
-    color: #d8f3e8;
+    color: #d0e2ff;
     text-decoration: none;
     font-size: 14px;
     transition: all 0.3s ease;
 }
 
 .footer-column ul li a:hover {
-    color: #fff;
+    color: #ffffff;
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
 }
 
@@ -131,7 +131,7 @@
 }
 
 .social-icons a:hover {
-    color: #8cffc1;
+    color: #99bbff;
     transform: scale(1.2);
 }
 
@@ -141,7 +141,7 @@
     padding-top: 12px;
     text-align: center;
     font-size: 14px;
-    color: #d9fbe7;
+    color: #e0e6ff;
 }
 
 .footer-links {
@@ -149,7 +149,7 @@
 }
 
 .footer-links a {
-    color: #c9f7e1;
+    color: #c9d8ff;
     margin: 0 10px;
     text-decoration: none;
     font-size: 13px;

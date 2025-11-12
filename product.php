@@ -49,11 +49,12 @@ $mainImage = getImagePath($p['image_path'] ?? ($images[0]['image_path'] ?? ''));
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 body {
-  background: #f5f8f6;
+  background: #f5f7ff;
   font-family: 'Poppins', sans-serif;
   color: #222;
   margin: 0;
 }
+
 .product-container {
   display: flex;
   flex-wrap: wrap;
@@ -69,15 +70,17 @@ body {
   box-shadow: 0 10px 35px rgba(0, 0, 0, 0.12);
   transform: translateY(-3px);
 }
+
 .product-images { flex: 1; min-width: 350px; }
 .main-image img {
   width: 100%;
   max-height: 450px;
   object-fit: cover;
   border-radius: 20px;
-  background: #f7faf9;
+  background: #f2f5ff;
   box-shadow: 0 3px 15px rgba(0,0,0,0.1);
 }
+
 .thumb-gallery {
   display: flex;
   gap: 12px;
@@ -92,9 +95,10 @@ body {
   transition: all 0.25s;
 }
 .thumb-gallery img:hover {
-  border-color: #38b000;
+  border-color: #3366ff;
   transform: scale(1.05);
 }
+
 .product-details {
   flex: 1;
   min-width: 350px;
@@ -105,9 +109,10 @@ body {
   font-weight: 600;
   margin-bottom: 15px;
 }
+
 .price {
-  font-size: 1 rem;
-  color: #2e7d32;
+  font-size: 1rem;
+  color: #3366ff;
   font-weight: 700;
   margin-right: 10px;
 }
@@ -125,12 +130,14 @@ body {
   font-size: 0.9rem;
   margin-left: 8px;
 }
+
 .product-details p {
   font-size: 1rem;
   color: #444;
   line-height: 1.6;
   margin-top: 15px;
 }
+
 .buy-buttons {
   margin-top: 30px;
   display: flex;
@@ -145,23 +152,25 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(56, 176, 0, 0.2);
-  background: linear-gradient(135deg, #4CAF50, #2e7d32);
+  box-shadow: 0 4px 12px rgba(51, 102, 255, 0.25);
+  background: linear-gradient(135deg, #3366ff, #5588ff);
   color: #fff;
 }
 .btn-cart:hover, .btn-buy:hover {
-  background: linear-gradient(135deg, #2e7d32, #1b5e20);
+  background: linear-gradient(135deg, #274bdb, #1a35b8);
   transform: translateY(-3px);
 }
+
 .shipping-info {
   margin-top: 25px;
-  background: #f2f7f3;
+  background: #eef3ff;
   padding: 18px;
   border-radius: 14px;
   font-size: 0.95rem;
-  border: 1px solid #dcebdc;
+  border: 1px solid #ccd8ff;
 }
-.shipping-info strong { color: #2e7d32; }
+.shipping-info strong { color: #3366ff; }
+
 .container h2 {
   font-size: 1.7rem;
   font-weight: 600;
@@ -169,12 +178,14 @@ body {
   text-align: center;
   margin: 50px 0 20px;
 }
+
 .products-container {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 28px;
   padding: 20px 0 60px;
 }
+
 .product-card {
   background: #fff;
   border-radius: 18px;
@@ -184,15 +195,17 @@ body {
   transition: all 0.3s ease;
 }
 .product-card:hover {
-  border-color: #4CAF50;
+  border-color: #3366ff;
   transform: translateY(-5px);
   box-shadow: 0 8px 25px rgba(0,0,0,0.12);
 }
+
 .product-image {
   width: 100%;
   height: 220px;
   object-fit: cover;
 }
+
 .product-info {
   padding: 18px;
   text-align: center;
@@ -206,6 +219,7 @@ body {
   white-space: nowrap;
   overflow: hidden;
 }
+
 .view-details-btn, .add-cart-btn {
   width: 100%;
   border: none;
@@ -217,14 +231,15 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
   color: #fff;
-  background: linear-gradient(135deg, #4CAF50, #2e7d32);
-  box-shadow: 0 3px 10px rgba(56, 176, 0, 0.25);
+  background: linear-gradient(135deg, #3366ff, #5588ff);
+  box-shadow: 0 3px 10px rgba(51, 102, 255, 0.25);
 }
 .view-details-btn:hover, .add-cart-btn:hover {
-  background: linear-gradient(135deg, #2e7d32, #1b5e20);
+  background: linear-gradient(135deg, #274bdb, #1a35b8);
   transform: translateY(-2px);
 }
 </style>
+
 
 <div class="container">
   <div class="product-container">
