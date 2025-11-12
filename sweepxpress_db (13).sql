@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 03, 2025 at 03:10 PM
+-- Generation Time: Nov 12, 2025 at 09:25 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.1.25
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -60,7 +60,13 @@ INSERT INTO `deliveries` (`id`, `order_id`, `customer_name`, `address`, `status`
 (21, 31, 'ror roxas', '', 'pending', NULL, '2025-10-21 06:20:39'),
 (22, 38, 'BIBI', '1233, 111, Manila, Manila', 'shipped', NULL, '2025-11-01 11:06:40'),
 (23, 39, 'ror roxas', 'rrrrrrrrrrrr', 'pending', NULL, '2025-11-01 11:08:34'),
-(24, 40, 'ror roxas', 'sssssssss', 'pending', NULL, '2025-11-01 12:57:38');
+(24, 40, 'ror roxas', 'sssssssss', 'pending', NULL, '2025-11-01 12:57:38'),
+(25, 44, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', '2025-11-12', '2025-11-12 05:12:26'),
+(26, 45, 'Ian paul Barquilla', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'delivered', '2025-11-14', '2025-11-12 05:44:08'),
+(27, 46, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', '2025-11-13', '2025-11-12 05:44:14'),
+(28, 47, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', NULL, '2025-11-12 05:55:59'),
+(29, 48, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', '2025-11-12', '2025-11-12 06:07:42'),
+(30, 49, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', '2025-11-14', '2025-11-12 07:44:42');
 
 -- --------------------------------------------------------
 
@@ -83,10 +89,10 @@ CREATE TABLE `inventory` (
 INSERT INTO `inventory` (`id`, `product_id`, `location_id`, `quantity`, `updated_at`) VALUES
 (1, 5, 1, 1500, '2025-11-03 13:04:34'),
 (2, 11, 1, 1011, '2025-11-01 13:23:25'),
-(3, 8, 1, 169, '2025-11-01 13:23:25'),
+(3, 8, 1, 168, '2025-11-12 06:07:33'),
 (4, 16, 1, 12, '2025-10-07 06:00:08'),
 (5, 7, 1, 206, '2025-11-01 15:24:46'),
-(6, 9, 1, 34, '2025-11-01 13:26:56'),
+(6, 9, 1, 33, '2025-11-12 07:39:01'),
 (7, 17, 1, 100, '2025-10-10 10:05:58'),
 (8, 12, 1, 4, '2025-10-14 16:28:41'),
 (9, 26, 1, 0, '2025-11-03 13:01:20');
@@ -121,7 +127,7 @@ CREATE TABLE `orders` (
   `user_id` int(11) DEFAULT NULL,
   `total` decimal(10,2) NOT NULL DEFAULT 0.00,
   `address` varchar(255) DEFAULT NULL,
-  `status` varchar(50) NOT NULL DEFAULT 'pending',
+  `status` enum('pending','preparing','delivered','completed','cancellation_requested','cancelled') NOT NULL DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `payment_method` varchar(50) NOT NULL DEFAULT 'COD',
   `payment_status` varchar(50) NOT NULL DEFAULT 'pending',
@@ -166,12 +172,18 @@ INSERT INTO `orders` (`id`, `user_id`, `total`, `address`, `status`, `created_at
 (32, 11, 450.00, '', 'pending', '2025-10-21 05:36:59', 'COD', 'pending', 'ror roxas', '--- PURCHASE ORDER REQUEST DETAILS ---\nBuyer Company Name: JJJJJJJJJJJJJJJJJJJ\nBuyer Contact Name: ror roxas\nBuyer Email: ROXAS1@Gmail.com\nBilling Address: SSSSSSSSSSSSSSSSSS\n------------------------------------', NULL, NULL, NULL, 'Net 45', 'B2B'),
 (36, 11, 300.00, '', 'pending', '2025-10-21 05:47:48', 'COD', 'pending', 'ror roxas', '--- PURCHASE ORDER REQUEST DETAILS ---\nBuyer Company Name: SSSSSSSSSSS\nBuyer Contact Name: ror roxas\nBuyer Email: ROXAS1@Gmail.com\nBilling Address: SSSSSSSSSSSS\n------------------------------------', NULL, NULL, NULL, 'Net 30', 'B2C'),
 (37, 11, 450.00, '', 'pending', '2025-10-21 05:48:29', 'COD', 'pending', 'ror roxas', '--- PURCHASE ORDER REQUEST DETAILS ---\nBuyer Company Name: MAR ROXAS\nBuyer Contact Name: ror roxas\nBuyer Email: ROXAS1@Gmail.com\nBilling Address: AAAAAAAAAA\n------------------------------------', NULL, NULL, NULL, 'Net 45', 'B2C'),
-(38, 5, 900.00, '1233, 111, Manila, Manila', 'shipped', '2025-11-01 08:20:34', 'GCash', 'Awaiting Payment', 'BIBI', 'nnnnnnnnnnnnnn', NULL, '', NULL, NULL, 'B2C'),
+(38, 5, 900.00, '1233, 111, Manila, Manila', '', '2025-11-01 08:20:34', 'GCash', 'Awaiting Payment', 'BIBI', 'nnnnnnnnnnnnnn', NULL, '', NULL, NULL, 'B2C'),
 (39, 11, 450.00, 'rrrrrrrrrrrr', 'pending', '2025-11-01 11:08:04', 'COD', 'pending', 'ror roxas', '--- PURCHASE ORDER REQUEST DETAILS ---\nBuyer Company Name: SSSSSSSSSSS\nBuyer Contact Name: ror roxas\nBuyer Email: ROXAS1@Gmail.com\nBilling Address: rrrrrrrrrr\n------------------------------------', NULL, NULL, NULL, 'Net 60', 'B2C'),
 (40, 11, 1043.00, 'sssssssss', 'pending', '2025-11-01 12:56:47', 'COD', 'pending', 'ror roxas', '--- PURCHASE ORDER REQUEST DETAILS ---\nBuyer Company Name: MAR ROXAS\nBuyer Contact Name: ror roxas\nBuyer Email: ROXAS1@Gmail.com\nBilling Address: ssssssssssssss\n------------------------------------', NULL, NULL, NULL, 'Net 60', 'B2C'),
 (41, 9, 15570.00, '21111 Vision Street, 321, MANILA, MANILA', 'pending', '2025-11-01 13:23:25', 'GCash', 'Awaiting Payment', 'Brian Francisco', 'jjjjjjjjjjjjjjjjjjjj', NULL, NULL, NULL, NULL, 'B2C'),
 (42, 10, 600.00, '1233, 111, Manila, Manila', 'pending', '2025-11-01 13:26:56', 'PAYMAYA', 'Awaiting Payment', 'Brian Paul Royo Francisco', '11111', NULL, '', NULL, NULL, 'B2C'),
-(43, 9, 1410.00, '21111 Vision Street, jjjjjjjjj, MANILA, MANILA', 'pending', '2025-11-01 15:24:46', 'COD', 'Pending', 'Brian Francisco', 'hhhhhhhhhhh', NULL, '', NULL, NULL, 'B2C');
+(43, 9, 1410.00, '21111 Vision Street, jjjjjjjjj, MANILA, MANILA', 'pending', '2025-11-01 15:24:46', 'COD', 'Pending', 'Brian Francisco', 'hhhhhhhhhhh', NULL, '', NULL, NULL, 'B2C'),
+(44, 12, 1300.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 05:11:00', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C'),
+(45, 14, 1300.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'delivered', '2025-11-12 05:23:27', 'COD', 'Pending', 'Ian paul Barquilla', '', NULL, NULL, NULL, NULL, 'B2C'),
+(46, 12, 1100.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 05:43:59', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C'),
+(47, 12, 1300.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 05:55:47', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C'),
+(48, 12, 300.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 06:07:33', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C'),
+(49, 12, 150.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 07:39:01', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C');
 
 -- --------------------------------------------------------
 
@@ -255,7 +267,13 @@ INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `quantity`, `price`) 
 (86, 41, 11, 100, 149.00),
 (87, 42, 9, 4, 150.00),
 (88, 43, 7, 1, 110.00),
-(89, 43, 26, 1, 1300.00);
+(89, 43, 26, 1, 1300.00),
+(90, 44, 26, 1, 1300.00),
+(91, 45, 26, 1, 1300.00),
+(92, 46, 21, 1, 1100.00),
+(93, 47, 26, 1, 1300.00),
+(94, 48, 8, 1, 300.00),
+(95, 49, 9, 1, 150.00);
 
 -- --------------------------------------------------------
 
@@ -266,9 +284,11 @@ INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `quantity`, `price`) 
 CREATE TABLE `products` (
   `id` int(11) NOT NULL,
   `name` varchar(160) NOT NULL,
+  `category` varchar(100) DEFAULT NULL,
   `sku` varchar(100) DEFAULT NULL,
   `description` text DEFAULT NULL,
   `price` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `image` varchar(255) DEFAULT NULL,
   `image_path` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `stock` int(11) NOT NULL DEFAULT 0,
@@ -279,32 +299,32 @@ CREATE TABLE `products` (
 -- Dumping data for table `products`
 --
 
-INSERT INTO `products` (`id`, `name`, `sku`, `description`, `price`, `image_path`, `created_at`, `stock`, `updated_at`) VALUES
-(1, 'All-Purpose Cleaner', NULL, 'Powerful degreaser for floors and counters.', 149.00, '/sweepxpress/assets/sample_cleaner.jpg', '2025-09-06 14:52:25', 0, NULL),
-(2, 'Microfiber Mop', NULL, 'Washable head, lightweight aluminum handle.', 399.00, '/sweepxpress/assets/sample_mop.jpg', '2025-09-06 14:52:25', 0, NULL),
-(3, 'Packaging Tape', NULL, 'Heavy-duty 2-inch clear tape for boxes.', 89.00, '/sweepxpress/assets/sample_tape.jpg', '2025-09-06 14:52:25', 0, NULL),
-(4, 'Latex Gloves (100 pcs)', NULL, 'Powder-free gloves for household cleaning.', 299.00, '/sweepxpress/assets/sample_gloves.jpg', '2025-09-06 14:52:25', 0, NULL),
-(5, '3M Duct Tape', NULL, 'Just a tape', 99.00, NULL, '2025-09-15 05:01:44', 0, NULL),
-(7, '3M Scotch Brite', NULL, 'a brand of cleaning and surface conditioning products, known for its non-woven abrasive pads and sponges made from synthetic fibers infused with abrasives like aluminum oxide or silicon carbide.', 110.00, '/sweepxpress/assets/3M Scotch Brite.jpg', '2025-09-15 09:21:09', 1, NULL),
-(8, '3M General Purpose Adhesive Cleaner', NULL, 'a solvent-based product designed to dissolve and remove sticky adhesive residue, grease, oil, wax, tar, and light paint overspray from various surfaces, including cured automotive paint, vinyl, and fabrics.', 300.00, '/sweepxpress/assets/3M General Purpose Adhesive Cleaner.jpg', '2025-09-15 09:21:09', 0, NULL),
-(9, '3M Gloves', NULL, 'washable work gloves offering good dexterity, breathability, and grip for light to medium-duty tasks like material handling, small parts assembly, and general construction, featuring a nitrile or polyurethane foam-coated palm and a knit wrist cuff for comfort and a secure fit.', 150.00, '/sweepxpress/assets/3M Gloves.jpg', '2025-09-15 09:21:09', 0, NULL),
-(10, '3M Sharpshoote No Rinse Mark Remover', NULL, 'a ready-to-use, extra-strength cleaner designed to remove difficult stains, spots, and grease from a wide variety of hard, washable surfaces without requiring rinsing.', 150.00, '/sweepxpress/assets/3M Sharpshoote No Rinse Mark Remover.jpg', '2025-09-15 09:21:09', 0, NULL),
-(11, '3M Duct Tapes', NULL, 'a durable, cloth-backed tape with a strong adhesive designed for general-purpose applications like bundling, sealing, and repairs, and it comes in different strengths and features, such as water resistance and hand-tearability.', 149.00, '/sweepxpress/assets/3M Duct Tapes.jpg', '2025-09-15 09:21:09', 0, NULL),
-(12, '3M Sanitizer Concentrate', NULL, 'an EPA-registered, concentrated liquid sanitizer for hard, non-porous surfaces, including food-contact surfaces in commercial settings.', 149.00, '/sweepxpress/assets/3M Sanitizer Concentrate.jpg', '2025-09-15 09:21:09', 0, NULL),
-(13, 'Scotch-Brite Quick Clean Griddle Starting Kit', NULL, 'a complete set designed for fast, safe, and efficient cleaning of hot commercial griddles, using a powerful, Green Seal™-certified liquid cleaner to remove burnt-on food soil without strong odors or caustic soda.', 149.00, '/sweepxpress/assets/Scotch-Brite Quick Clean Griddle Starting Kit.jpg', '2025-09-15 09:21:09', 0, NULL),
-(14, '3M Solution Tablets', NULL, 'EPA-registered, concentrated disinfectant tablets that, when dissolved in water, create a solution to kill a broad spectrum of microbes, including Clostridioides difficile (C. diff) spores, Norovirus, SARS-CoV-2, and various bacteria, on hard, non-porous surfaces.', 200.00, '/sweepxpress/assets/3M Solution Tablets.jpg', '2025-09-15 09:21:09', 0, NULL),
-(15, '3M Spray Buff', NULL, 'a milky-white, ready-to-use emulsion designed for spray buffing operations to quickly clean, polish, and restore the luster of floor finishes, especially 3M and high-quality synthetic finishes.', 90.00, '/sweepxpress/assets/3M Spray Buff.jpg', '2025-09-15 09:21:09', 0, NULL),
-(16, '3M Stainless Steel Cleaner and Polish', NULL, 'a ready-to-use aerosol product designed to clean and polish metal surfaces in a single step, leaving a high-gloss, streak-free finish.', 180.00, '/sweepxpress/assets/3M Stainless Steel Cleaner and Polish.jpg', '2025-09-15 09:21:09', 0, NULL),
-(17, '3M Super Shine', NULL, 'a floor finish that creates a durable, high-gloss, and protective layer on various hard floors, including ceramic tiles, vinyl, rubber, and terrazzo.', 300.00, '/sweepxpress/assets/3M Super Shine.jpg', '2025-09-15 09:21:09', 0, NULL),
-(18, '3M White Super Polish Pad 4100', NULL, 'a fine-grade, white, non-woven polyester fiber pad designed for light cleaning, buffing soft finishes, and polishing soft waxes on wood or other protected floors.', 60.00, '/sweepxpress/assets/3M White Super Polish Pad 4100.jpg', '2025-09-15 09:21:09', 0, NULL),
-(19, '3m-scotchgard-stone-floor-protector-plus-3-785-liter-bag', NULL, 'a high-performance solution that hardens, seals, and protects porous stone floors like concrete, marble, and terrazzo by creating a durable, glossy, and scuff-resistant surface.', 160.00, '/sweepxpress/assets/3m-scotchgard-stone-floor-protector-plus-3-785-liter-bag.avif', '2025-09-15 09:21:09', 0, NULL),
-(20, '3M™ Nomad™ Scraper Matting 7150, Light Green', NULL, 'Durable vinyl-loops scrape, trap and hide dirt and moisture, minimizing re-tracking into the building', 20.00, '/sweepxpress/assets/3M™ Nomad™ Scraper Matting 7150, Light Green.jpg', '2025-09-15 09:21:09', 0, NULL),
-(21, 'Karchar K 3 Power Control', NULL, 'a mid-range electric pressure washer designed for home and garden use, featuring a Power Control spray gun with an LED display for selecting and monitoring pressure levels.', 1100.00, '/sweepxpress/assets/Karchar K 3 Power Control.jpg', '2025-09-15 09:21:09', 0, NULL),
-(22, 'Karcher Bag-Less Powerful Vacuum Cleaner', NULL, 'provide consistent, high suction with multi-cyclone technology, eliminating the need for filter bags.', 1500.00, '/sweepxpress/assets/Karcher Bag-Less Powerful Vacuum Cleaner.jpg', '2025-09-15 09:21:09', 0, NULL),
-(23, 'Plain 3M Nomad Z Web Mat', NULL, 'a durable, all-vinyl floor mat having an open, continuously patterned surface.', 50.00, '/sweepxpress/assets/Plain 3M Nomad Z Web Mat.webp', '2025-09-15 09:21:09', 0, NULL),
-(24, 'Scotch Brite Ultra Fine Hand Sanding', NULL, 'a load-resistant, non-woven abrasive pad that uses silicon carbide to achieve a fine, uniform finish, effectively replacing steel wool without the risks of rust, splintering, or shredding.', 20.00, '/sweepxpress/assets/Scotch Brite Ultra Fine Hand Sanding.jpg', '2025-09-15 09:21:09', 0, NULL),
-(25, 'ScotchBrite Grout Brush', NULL, 'Easily clean in nooks and crannies with the Scotch-Brite Grout & Detail Brush. Its powerful non-scratch bristles are safe on grout, tile, bathroom fixtures, faucets, drains, and more! The Scotch-Brite® Grout & Detail Brush features antimicrobial bristle protection* that works to prevent bacterial odors. Get the most out of this durable, reusable brush with a thorough cleaning after use.', 70.00, '/sweepxpress/assets/ScotchBrite Grout Brush.jpg', '2025-09-15 09:21:09', 0, NULL),
-(26, '3M Carpet Map', NULL, 'A 3M carpet mat is an entrance mat designed to trap dirt and moisture, protecting indoor floors. These mats use dual-fiber construction (often nylon and polypropylene) to scrape, hide, and absorb dirt and water from footwear, keeping the interior clean and safe. Key features include durability for high-traffic areas, non-slip backing to prevent movement, and an easy-to-clean design that typically involves regular vacuuming', 1300.00, '/sweepxpress/uploads/1762169135_6908912f37889.jpg', '2025-10-15 16:38:09', 0, NULL);
+INSERT INTO `products` (`id`, `name`, `category`, `sku`, `description`, `price`, `image`, `image_path`, `created_at`, `stock`, `updated_at`) VALUES
+(1, 'All-Purpose Cleaner', 'Cleaning Supplies', NULL, 'Powerful degreaser for floors and counters.', 149.00, NULL, '/sweepxpress/assets/sample_cleaner.jpg', '2025-09-06 14:52:25', 0, NULL),
+(2, 'Microfiber Mop', 'Equipment', NULL, 'Washable head, lightweight aluminum handle.', 399.00, NULL, '/sweepxpress/assets/sample_mop.jpg', '2025-09-06 14:52:25', 0, NULL),
+(3, 'Packaging Tape', 'Tapes & Adhesives', NULL, 'Heavy-duty 2-inch clear tape for boxes.', 89.00, NULL, '/sweepxpress/assets/sample_tape.jpg', '2025-09-06 14:52:25', 0, NULL),
+(4, 'Latex Gloves (100 pcs)', 'Cleaning Supplies', NULL, 'Powder-free gloves for household cleaning.', 299.00, NULL, '/sweepxpress/assets/sample_gloves.jpg', '2025-09-06 14:52:25', 0, NULL),
+(5, '3M Duct Tape', 'Tapes & Adhesives', NULL, 'Just a tape', 99.00, NULL, NULL, '2025-09-15 05:01:44', 0, NULL),
+(7, '3M Scotch Brite', 'Cleaning Supplies', NULL, 'a brand of cleaning and surface conditioning products, known for its non-woven abrasive pads and sponges made from synthetic fibers infused with abrasives like aluminum oxide or silicon carbide.', 110.00, NULL, '/sweepxpress/assets/3M Scotch Brite.jpg', '2025-09-15 09:21:09', 1, NULL),
+(8, '3M General Purpose Adhesive Cleaner', 'Cleaning Supplies', NULL, 'a solvent-based product designed to dissolve and remove sticky adhesive residue, grease, oil, wax, tar, and light paint overspray from various surfaces, including cured automotive paint, vinyl, and fabrics.', 300.00, NULL, '/sweepxpress/assets/3M General Purpose Adhesive Cleaner.jpg', '2025-09-15 09:21:09', 0, NULL),
+(9, '3M Gloves', NULL, NULL, 'washable work gloves offering good dexterity, breathability, and grip for light to medium-duty tasks like material handling, small parts assembly, and general construction, featuring a nitrile or polyurethane foam-coated palm and a knit wrist cuff for comfort and a secure fit.', 150.00, NULL, '/sweepxpress/assets/3M Gloves.jpg', '2025-09-15 09:21:09', 0, NULL),
+(10, '3M Sharpshoote No Rinse Mark Remover', 'Cleaning Supplies', NULL, 'a ready-to-use, extra-strength cleaner designed to remove difficult stains, spots, and grease from a wide variety of hard, washable surfaces without requiring rinsing.', 150.00, NULL, '/sweepxpress/assets/3M Sharpshoote No Rinse Mark Remover.jpg', '2025-09-15 09:21:09', 0, NULL),
+(11, '3M Duct Tapes', 'Tapes & Adhesives', NULL, 'a durable, cloth-backed tape with a strong adhesive designed for general-purpose applications like bundling, sealing, and repairs, and it comes in different strengths and features, such as water resistance and hand-tearability.', 149.00, NULL, '/sweepxpress/assets/3M Duct Tapes.jpg', '2025-09-15 09:21:09', 0, NULL),
+(12, '3M Sanitizer Concentrate', 'Cleaning Supplies', NULL, 'an EPA-registered, concentrated liquid sanitizer for hard, non-porous surfaces, including food-contact surfaces in commercial settings.', 149.00, NULL, '/sweepxpress/assets/3M Sanitizer Concentrate.jpg', '2025-09-15 09:21:09', 0, NULL),
+(13, 'Scotch-Brite Quick Clean Griddle Starting Kit', 'Cleaning Supplies', NULL, 'a complete set designed for fast, safe, and efficient cleaning of hot commercial griddles, using a powerful, Green Seal™-certified liquid cleaner to remove burnt-on food soil without strong odors or caustic soda.', 149.00, NULL, '/sweepxpress/assets/Scotch-Brite Quick Clean Griddle Starting Kit.jpg', '2025-09-15 09:21:09', 0, NULL),
+(14, '3M Solution Tablets', 'Cleaning Supplies', NULL, 'EPA-registered, concentrated disinfectant tablets that, when dissolved in water, create a solution to kill a broad spectrum of microbes, including Clostridioides difficile (C. diff) spores, Norovirus, SARS-CoV-2, and various bacteria, on hard, non-porous surfaces.', 200.00, NULL, '/sweepxpress/assets/3M Solution Tablets.jpg', '2025-09-15 09:21:09', 0, NULL),
+(15, '3M Spray Buff', 'Cleaning Supplies', NULL, 'a milky-white, ready-to-use emulsion designed for spray buffing operations to quickly clean, polish, and restore the luster of floor finishes, especially 3M and high-quality synthetic finishes.', 90.00, NULL, '/sweepxpress/assets/3M Spray Buff.jpg', '2025-09-15 09:21:09', 0, NULL),
+(16, '3M Stainless Steel Cleaner and Polish', 'Cleaning Supplies', NULL, 'a ready-to-use aerosol product designed to clean and polish metal surfaces in a single step, leaving a high-gloss, streak-free finish.', 180.00, NULL, '/sweepxpress/assets/3M Stainless Steel Cleaner and Polish.jpg', '2025-09-15 09:21:09', 0, NULL),
+(17, '3M Super Shine', 'Cleaning Supplies', NULL, 'a floor finish that creates a durable, high-gloss, and protective layer on various hard floors, including ceramic tiles, vinyl, rubber, and terrazzo.', 300.00, NULL, '/sweepxpress/assets/3M Super Shine.jpg', '2025-09-15 09:21:09', 0, NULL),
+(18, '3M White Super Polish Pad 4100', 'Cleaning Supplies', NULL, 'a fine-grade, white, non-woven polyester fiber pad designed for light cleaning, buffing soft finishes, and polishing soft waxes on wood or other protected floors.', 60.00, NULL, '/sweepxpress/assets/3M White Super Polish Pad 4100.jpg', '2025-09-15 09:21:09', 0, NULL),
+(19, '3m-scotchgard-stone-floor-protector-plus-3-785-liter-bag', 'Floor Mats', NULL, 'a high-performance solution that hardens, seals, and protects porous stone floors like concrete, marble, and terrazzo by creating a durable, glossy, and scuff-resistant surface.', 160.00, NULL, '/sweepxpress/assets/3m-scotchgard-stone-floor-protector-plus-3-785-liter-bag.avif', '2025-09-15 09:21:09', 0, NULL),
+(20, '3M™ Nomad™ Scraper Matting 7150, Light Green', 'Floor Mats', NULL, 'Durable vinyl-loops scrape, trap and hide dirt and moisture, minimizing re-tracking into the building', 20.00, NULL, '/sweepxpress/assets/3M™ Nomad™ Scraper Matting 7150, Light Green.jpg', '2025-09-15 09:21:09', 0, NULL),
+(21, 'Karchar K 3 Power Control', 'Equipment', NULL, 'a mid-range electric pressure washer designed for home and garden use, featuring a Power Control spray gun with an LED display for selecting and monitoring pressure levels.', 1100.00, NULL, '/sweepxpress/assets/Karchar K 3 Power Control.jpg', '2025-09-15 09:21:09', 0, NULL),
+(22, 'Karcher Bag-Less Powerful Vacuum Cleaner', 'Equipment', NULL, 'provide consistent, high suction with multi-cyclone technology, eliminating the need for filter bags.', 1500.00, NULL, '/sweepxpress/assets/Karcher Bag-Less Powerful Vacuum Cleaner.jpg', '2025-09-15 09:21:09', 0, NULL),
+(23, 'Plain 3M Nomad Z Web Mat', 'Floor Mats', NULL, 'a durable, all-vinyl floor mat having an open, continuously patterned surface.', 50.00, NULL, '/sweepxpress/assets/Plain 3M Nomad Z Web Mat.webp', '2025-09-15 09:21:09', 0, NULL),
+(24, 'Scotch Brite Ultra Fine Hand Sanding', 'Tools & Accessories', NULL, 'a load-resistant, non-woven abrasive pad that uses silicon carbide to achieve a fine, uniform finish, effectively replacing steel wool without the risks of rust, splintering, or shredding.', 20.00, NULL, '/sweepxpress/assets/Scotch Brite Ultra Fine Hand Sanding.jpg', '2025-09-15 09:21:09', 0, NULL),
+(25, 'ScotchBrite Grout Brush', 'Tools & Accessories', NULL, 'Easily clean in nooks and crannies with the Scotch-Brite Grout & Detail Brush. Its powerful non-scratch bristles are safe on grout, tile, bathroom fixtures, faucets, drains, and more! The Scotch-Brite® Grout & Detail Brush features antimicrobial bristle protection* that works to prevent bacterial odors. Get the most out of this durable, reusable brush with a thorough cleaning after use.', 70.00, NULL, '/sweepxpress/assets/ScotchBrite Grout Brush.jpg', '2025-09-15 09:21:09', 0, NULL),
+(26, '3M Carpet Map', 'Floor Mats', NULL, 'A 3M carpet mat is an entrance mat designed to trap dirt and moisture, protecting indoor floors. These mats use dual-fiber construction (often nylon and polypropylene) to scrape, hide, and absorb dirt and water from footwear, keeping the interior clean and safe. Key features include durability for high-traffic areas, non-slip backing to prevent movement, and an easy-to-clean design that typically involves regular vacuuming', 1300.00, NULL, '/sweepxpress/uploads/1762169135_6908912f37889.jpg', '2025-10-15 16:38:09', 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -352,7 +372,12 @@ INSERT INTO `product_stock_history` (`id`, `product_id`, `action`, `quantity`, `
 (12, 9, 'OUT', 1, 'Order #41 checkout', '2025-11-01 13:23:25'),
 (13, 11, 'OUT', 100, 'Order #41 checkout', '2025-11-01 13:23:25'),
 (14, 9, 'OUT', 4, 'Order #42 checkout', '2025-11-01 13:26:56'),
-(15, 7, 'OUT', 1, 'Order #43 checkout', '2025-11-01 15:24:46');
+(15, 7, 'OUT', 1, 'Order #43 checkout', '2025-11-01 15:24:46'),
+(16, 26, 'OUT', 1, 'Order #44 checkout', '2025-11-12 05:11:00'),
+(17, 26, 'OUT', 1, 'Order #45 checkout', '2025-11-12 05:23:27'),
+(18, 26, 'OUT', 1, 'Order #47 checkout', '2025-11-12 05:55:47'),
+(19, 8, 'OUT', 1, 'Order #48 checkout', '2025-11-12 06:07:33'),
+(20, 9, 'OUT', 1, 'Order #49 checkout', '2025-11-12 07:39:01');
 
 -- --------------------------------------------------------
 
@@ -429,7 +454,12 @@ INSERT INTO `stock_movements` (`id`, `product_id`, `location_id`, `movement_type
 (50, 26, 1, 'OUT', 1111111, '', 'Admin', NULL, '2025-11-03 12:59:52'),
 (51, 26, 1, 'OUT', 11, '', 'Admin', NULL, '2025-11-03 13:00:16'),
 (52, 26, 1, 'ADJUST', 109999989, '[DEDUCT] SOBRA', 'Admin', NULL, '2025-11-03 13:01:20'),
-(53, 5, 1, 'OUT', 6, '', 'Admin', NULL, '2025-11-03 13:04:34');
+(53, 5, 1, 'OUT', 6, '', 'Admin', NULL, '2025-11-03 13:04:34'),
+(54, 26, 1, 'OUT', 1, 'Order #44 checkout', 'IAN PAUL BARQUILLA', 'IAN PAUL BARQUILLA', '2025-11-12 05:11:00'),
+(55, 26, 1, 'OUT', 1, 'Order #45 checkout', 'Ian paul Barquilla', 'Ian paul Barquilla', '2025-11-12 05:23:27'),
+(56, 26, 1, 'OUT', 1, 'Order #47 checkout', 'IAN PAUL BARQUILLA', 'IAN PAUL BARQUILLA', '2025-11-12 05:55:47'),
+(57, 8, 1, 'OUT', 1, 'Order #48 checkout', 'IAN PAUL BARQUILLA', 'IAN PAUL BARQUILLA', '2025-11-12 06:07:33'),
+(58, 9, 1, 'OUT', 1, 'Order #49 checkout', 'IAN PAUL BARQUILLA', 'IAN PAUL BARQUILLA', '2025-11-12 07:39:01');
 
 -- --------------------------------------------------------
 
@@ -441,29 +471,39 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `google_id` varchar(255) DEFAULT NULL,
   `name` varchar(120) NOT NULL,
+  `username` varchar(50) NOT NULL,
   `email` varchar(190) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
   `profile_image` varchar(255) DEFAULT NULL,
   `role` enum('customer','admin','business') NOT NULL DEFAULT 'customer',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `phone` varchar(20) DEFAULT NULL,
-  `dark_mode` tinyint(1) DEFAULT 0
+  `dark_mode` tinyint(1) DEFAULT 0,
+  `birth_date` date DEFAULT NULL,
+  `street_address` varchar(255) DEFAULT NULL,
+  `city` varchar(100) DEFAULT NULL,
+  `zip_code` varchar(20) DEFAULT NULL,
+  `phone_number` varchar(20) DEFAULT NULL,
+  `gender` varchar(10) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `google_id`, `name`, `email`, `password_hash`, `profile_image`, `role`, `created_at`, `phone`, `dark_mode`) VALUES
-(1, NULL, 'Admin', 'admin@sx.local', '$2y$10$97C0lN5nIyk7VJ5vUQHcYOmMZ2jCvBRKv8vujwES1jM2xZ2z8yZvy', NULL, 'admin', '2025-09-06 14:52:25', NULL, 0),
-(2, NULL, 'BRIAN', 'brian62@gmail.com', '$2y$10$.X99YppdGcBO8o.spUhTE.n2TZggTNPN1Ug77w1GeAaO9NuKouUrm', '/sweepxpress/uploads/profile_2_1762009131.jpg', 'admin', '2025-09-06 15:31:41', NULL, 0),
-(4, NULL, 'BRIAN', 'brian67@gmail.com', '$2y$10$dCucJfXPYqC7w5yIYtpP.ukSZ2yL71Wy3lLW8ym.hvTP22c9zMauC', NULL, 'customer', '2025-09-06 15:46:02', NULL, 0),
-(5, NULL, 'BIBI', 'brian61@gmail.com', '$2y$10$/MGIinkV.PorGJ9w97xC2uGN.JRdV4IPyRW1BRWnbXAMnGJqq7tMW', '/sweepxpress/uploads/profiles/1760416060_10a21fd7478c90915f00c8a6122735c9.jpg', 'customer', '2025-09-14 14:49:31', NULL, 0),
-(6, NULL, 'Admin User', 'admin@sweepxpress.com', '$2y$10$L9l4Tk6whxGqVZ2U1k7/auuE7nTZcY84XJ3C8f6zvbbtQkl7Agx3u', NULL, 'admin', '2025-09-16 03:02:36', NULL, 0),
-(7, NULL, 'Bryz', 'brian63@gmail.com', '$2y$10$X0qGgGXMwxeotkxoplW2YuxZ/1mM5NcCM7yG.xI0/adUa/8NIofpW', NULL, 'customer', '2025-09-20 15:09:38', NULL, 0),
-(9, '116798107768038634331', 'Brian Francisco', 'brianfrancisco102003@gmail.com', '', '/sweepxpress/uploads/profiles/1762168559_956372b1b403fd1969b995c4de748964.jpg', 'customer', '2025-10-04 14:45:21', NULL, 0),
-(10, '107546182234256110608', '[NTC-S] Brian Paul Royo Francisco', '422000909@ntc.edu.ph', '', NULL, 'customer', '2025-10-07 02:44:12', NULL, 0),
-(11, NULL, 'ror roxas', 'ROXAS1@Gmail.com', '$2y$10$vBfLyIF.X7eftg1hcYeD4.J7yCpYWQ1TLxsow6tqn78WG4ow2UG6y', NULL, 'business', '2025-10-21 04:17:26', NULL, 0);
+INSERT INTO `users` (`id`, `google_id`, `name`, `username`, `email`, `password_hash`, `profile_image`, `role`, `created_at`, `phone`, `dark_mode`, `birth_date`, `street_address`, `city`, `zip_code`, `phone_number`, `gender`) VALUES
+(1, NULL, 'Admin', '', 'admin@sx.local', '$2y$10$97C0lN5nIyk7VJ5vUQHcYOmMZ2jCvBRKv8vujwES1jM2xZ2z8yZvy', NULL, 'admin', '2025-09-06 14:52:25', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(2, NULL, 'BRIAN', '', 'brian62@gmail.com', '$2y$10$.X99YppdGcBO8o.spUhTE.n2TZggTNPN1Ug77w1GeAaO9NuKouUrm', '/sweepxpress/uploads/profile_2_1762009131.jpg', 'admin', '2025-09-06 15:31:41', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(4, NULL, 'BRIAN', '', 'brian67@gmail.com', '$2y$10$dCucJfXPYqC7w5yIYtpP.ukSZ2yL71Wy3lLW8ym.hvTP22c9zMauC', NULL, 'customer', '2025-09-06 15:46:02', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(5, NULL, 'BIBI', '', 'brian61@gmail.com', '$2y$10$/MGIinkV.PorGJ9w97xC2uGN.JRdV4IPyRW1BRWnbXAMnGJqq7tMW', '/sweepxpress/uploads/profiles/1760416060_10a21fd7478c90915f00c8a6122735c9.jpg', 'customer', '2025-09-14 14:49:31', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(6, NULL, 'Admin User', '', 'admin@sweepxpress.com', '$2y$10$L9l4Tk6whxGqVZ2U1k7/auuE7nTZcY84XJ3C8f6zvbbtQkl7Agx3u', NULL, 'admin', '2025-09-16 03:02:36', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(7, NULL, 'Bryz', '', 'brian63@gmail.com', '$2y$10$X0qGgGXMwxeotkxoplW2YuxZ/1mM5NcCM7yG.xI0/adUa/8NIofpW', NULL, 'customer', '2025-09-20 15:09:38', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(9, '116798107768038634331', 'Brian Francisco', '', 'brianfrancisco102003@gmail.com', '', '/sweepxpress/uploads/profiles/1762168559_956372b1b403fd1969b995c4de748964.jpg', 'customer', '2025-10-04 14:45:21', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(10, '107546182234256110608', '[NTC-S] Brian Paul Royo Francisco', '', '422000909@ntc.edu.ph', '', NULL, 'customer', '2025-10-07 02:44:12', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(11, NULL, 'ror roxas', '', 'ROXAS1@Gmail.com', '$2y$10$vBfLyIF.X7eftg1hcYeD4.J7yCpYWQ1TLxsow6tqn78WG4ow2UG6y', NULL, 'business', '2025-10-21 04:17:26', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(12, '118145100184117452809', 'IAN PAUL BARQUILLA', 'BARQUILLA05', 'ianpaul.barquilla2001@gmail.com', '', '/sweepxpress/uploads/profiles/1762924817_f93b3ddb55eb28ee9b369588793751c8.jpg', '', '2025-11-12 05:10:45', NULL, 0, '0000-00-00', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY', 'Quezon city', '1103', '9155930658', 'Male'),
+(13, NULL, 'mama blue', '', 'admin@gmail.com', '$2y$10$t0r77QOoqRNHGzgawoHgE.SmPOuiQIxfXwMSkkBOM9ped0jvNrLlS', NULL, 'admin', '2025-11-12 05:11:21', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(14, NULL, 'Ian paul Barquilla', 'BARQUILLA05', 'user@gmail.com', '$2y$10$lLOelFUunhapu.e5OsyMPOR5ysQY7XvrVghtecgPAGMIAWVf40RGS', '/sweepxpress/uploads/profiles/1762924979_c36675e6947a5851817794287090a641.jpg', 'customer', '2025-11-12 05:20:46', NULL, 0, '2001-05-05', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY', 'Quezon city', '1103', '9155930658', 'Male');
 
 --
 -- Indexes for dumped tables
@@ -548,7 +588,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `deliveries`
 --
 ALTER TABLE `deliveries`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
 
 --
 -- AUTO_INCREMENT for table `inventory`
@@ -566,13 +606,13 @@ ALTER TABLE `locations`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=90;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=96;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -590,19 +630,19 @@ ALTER TABLE `product_images`
 -- AUTO_INCREMENT for table `product_stock_history`
 --
 ALTER TABLE `product_stock_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT for table `stock_movements`
 --
 ALTER TABLE `stock_movements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- Constraints for dumped tables

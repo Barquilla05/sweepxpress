@@ -9,16 +9,16 @@
             </div>
 
             <div class="footer-column">
-                <h3>Products</h3>
-                <ul>
-                    <li><a href="/sweepxpress/index.php?category=Cleaning+Agents">Cleaning Agents</a></li>
-                    <li><a href="/sweepxpress/index.php?category=Cleaning+Tools">Cleaning Tools</a></li>
-                    <li><a href="/sweepxpress/index.php?category=Adhesives+%26+Tapes">Adhesives & Tapes</a></li>
-                    <li><a href="/sweepxpress/index.php?category=Floor+%26+Surface+Care">Floor & Surface Care</a></li>
-                    <li><a href="/sweepxpress/index.php?category=Equipment">Equipment</a></li>
-                    <li><a href="/sweepxpress/index.php">All Products</a></li>
-                </ul>
-            </div>
+            <h3>Products</h3>
+            <ul>
+                <li><a href="/sweepxpress/index.php?category=Cleaning+Supplies">Cleaning Supplies</a></li>
+                <li><a href="/sweepxpress/index.php?category=Tapes+%26+Adhesives">Tapes & Adhesives</a></li>
+                <li><a href="/sweepxpress/index.php?category=Equipment">Equipment</a></li>
+                <li><a href="/sweepxpress/index.php?category=Floor+Mats">Floor Mats</a></li>
+                <li><a href="/sweepxpress/index.php?category=Tools+%26+Accessories">Tools & Accessories</a></li>
+                <li><a href="/sweepxpress/index.php">All Products</a></li>
+            </ul>
+        </div>
 
             <div class="footer-column">
                 <h3>Company</h3>

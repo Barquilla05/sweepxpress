@@ -98,6 +98,14 @@ if (file_exists(__DIR__ . '/config_oauth.php')) {
     require_once __DIR__ . '/config_oauth.php';
 }
 
+if (!function_exists('generateSKU')) {
+    function generateSKU($productName) {
+        $prefix = strtoupper(substr(preg_replace('/\s+/', '', $productName), 0, 3));
+        $randomNumber = rand(1000, 9999);
+        return $prefix . $randomNumber;
+    }
+}
+
 // --------------------------------------------------------------------
 // END OF CONFIG
 // --------------------------------------------------------------------

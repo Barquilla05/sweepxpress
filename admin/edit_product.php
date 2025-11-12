@@ -1,7 +1,4 @@
 <?php
-// Note: If this file is blank, the error is likely in the included files (auth.php or header.php)
-// or due to a PHP fatal error before execution reaches the HTML section.
-
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/header.php';
 
@@ -13,6 +10,13 @@ $images = [];
 // Determine product id (GET first, POST may override)
 if (isset($_GET['id']) && filter_var($_GET['id'], FILTER_VALIDATE_INT)) {
     $id = (int)$_GET['id'];
+}
+
+// SKU generator function (can also move to config.php if preferred)
+function generateSKU($productName) {
+    $prefix = strtoupper(substr(preg_replace('/\s+/', '', $productName), 0, 3));
+    $randomNumber = rand(1000, 9999);
+    return $prefix . $randomNumber;
 }
 
 // POST handling
@@ -107,6 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // --- UPDATE DETAILS ---
         if ($action === 'update_details') {
             $name = trim($_POST['name'] ?? '');
+            $skuInput = trim($_POST['sku'] ?? '');
             $price = filter_var($_POST['price'] ?? 0, FILTER_VALIDATE_FLOAT);
             $desc = trim($_POST['description'] ?? '');
             $stock = filter_var($_POST['stock'] ?? 0, FILTER_VALIDATE_INT);
@@ -114,10 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($name === '' || $price === false || $desc === '' || $stock === false) {
                 $message = '<div class="alert alert-danger">Invalid form data submitted for product details.</div>';
             } else {
+                // Use provided SKU or generate if empty
+                $sku = $skuInput === '' ? generateSKU($name) : $skuInput;
+
                 try {
-                    $stmt = $pdo->prepare("UPDATE products SET name = ?, description = ?, price = ?, stock = ? WHERE id = ?");
-                    $stmt->execute([$name, $desc, $price, $stock, $id]);
-                    $message = '<div class="alert alert-success">✅ Product details updated successfully.</div>';
+                    $stmt = $pdo->prepare("UPDATE products SET name = ?, sku = ?, description = ?, price = ?, stock = ? WHERE id = ?");
+                    $stmt->execute([$name, $sku, $desc, $price, $stock, $id]);
+                    $message = '<div class="alert alert-success">✅ Product details updated successfully. SKU: ' . htmlspecialchars($sku) . '</div>';
                 } catch (PDOException $e) {
                     error_log("Product update error: " . $e->getMessage());
                     $message = '<div class="alert alert-danger">Database error while updating product details.</div>';
@@ -236,6 +244,11 @@ if (!empty($message)) {
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">SKU (Optional, leave blank to auto-generate)</label>
+                    <input type="text" name="sku" class="form-control" maxlength="20" value="<?php echo htmlspecialchars($product['sku'] ?? ''); ?>" placeholder="e.g. CLE1234">
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label">Description</label>
                     <textarea name="description" class="form-control" rows="3" required><?php echo htmlspecialchars($product['description']); ?></textarea>
                 </div>
@@ -331,4 +344,4 @@ if (!empty($message)) {
     <?php endif; ?>
 <?php endif; ?>
 
-<?php // require_once __DIR__ . '/../includes/footer.php'; // Add your footer inclusion here ?>
+<?php // require_once __DIR__ . '/../includes/footer.php'; ?>
