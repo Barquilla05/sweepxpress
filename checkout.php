@@ -383,18 +383,141 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="col-12 mt-3">
-                <button class="btn btn-success w-100 btn-lg shadow-sm" type="submit">
-                    <i class="bi bi-bag-check"></i> Place Order
-                </button>
-            </div>
+            <button class="btn btn-success w-100 btn-lg shadow-sm" type="button" id="confirmOrderBtn">
+                <i class="bi bi-bag-check"></i> Place Order
+            </button>
+        </div>
+
         </form>
     <?php endif; ?>
 </div>
+<!-- Order Confirmation Modal -->
+<div class="modal fade" id="confirmOrderModal" tabindex="-1" aria-labelledby="confirmOrderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="confirmOrderModalLabel">
+          <i class="bi bi-clipboard-check"></i> Confirm Your Order
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Shipping Info -->
+        <div class="mb-3">
+          <h6 class="fw-bold text-success"><i class="bi bi-person"></i> Shipping Information</h6>
+          <p class="mb-1"><strong>Name:</strong> <span id="confirmName"></span></p>
+          <p class="mb-1"><strong>Address:</strong> <span id="confirmAddress"></span></p>
+          <p class="mb-3"><strong>Notes:</strong> <span id="confirmNotes"></span></p>
+        </div>
+
+        <!-- Payment Info -->
+        <div class="mb-3">
+          <h6 class="fw-bold text-success"><i class="bi bi-cash-stack"></i> Payment Method</h6>
+          <p><strong id="confirmPaymentMethod"></strong></p>
+        </div>
+
+        <!-- Items Table -->
+        <div>
+          <h6 class="fw-bold text-success"><i class="bi bi-basket"></i> Items Summary</h6>
+          <div class="table-responsive border rounded">
+            <table class="table table-sm table-striped mb-0 align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Image</th>
+                  <th>Item</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-end">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody id="confirmItems"></tbody>
+              <tfoot>
+                <tr class="fw-bold table-info">
+                  <td colspan="3" class="text-end">Total</td>
+                  <td class="text-end text-success">₱<?= number_format($total, 2); ?></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-success" id="confirmSubmitBtn">
+          <i class="bi bi-bag-check"></i> Yes, Place Order
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Show COD instructions by default
     document.getElementById('cod-details').classList.remove('d-none');
+
+    const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+    const confirmModal = new bootstrap.Modal(document.getElementById('confirmOrderModal'));
+    const confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+    const checkoutForm = document.querySelector('form');
+
+    // Modal fields
+    const confirmName = document.getElementById('confirmName');
+    const confirmAddress = document.getElementById('confirmAddress');
+    const confirmNotes = document.getElementById('confirmNotes');
+    const confirmPaymentMethod = document.getElementById('confirmPaymentMethod');
+    const confirmItems = document.getElementById('confirmItems');
+
+    // Get product rows from checkout summary (excluding total)
+    const itemRows = Array.from(document.querySelectorAll('.table tbody tr')).slice(0, -1);
+
+    confirmOrderBtn.addEventListener('click', function() {
+        // Collect shipping info
+        const name = checkoutForm.querySelector('input[name="name"]').value.trim();
+        const street = checkoutForm.querySelector('input[name="street_address"]').value.trim();
+        const barangay = checkoutForm.querySelector('input[name="barangay"]').value.trim();
+        const city = checkoutForm.querySelector('input[name="city"]').value.trim();
+        const province = checkoutForm.querySelector('input[name="province"]').value.trim();
+        const notes = checkoutForm.querySelector('textarea[name="notes"]').value.trim();
+        const payment = checkoutForm.querySelector('input[name="payment_method"]:checked')?.value || 'COD';
+
+        // Fill modal details
+        confirmName.textContent = name || '(No name provided)';
+        confirmAddress.textContent = `${street}, ${barangay}, ${city}, ${province}`;
+        confirmNotes.textContent = notes || 'None';
+        confirmPaymentMethod.textContent = payment;
+
+        // Clear and repopulate the items
+        confirmItems.innerHTML = '';
+        itemRows.forEach(row => {
+            const imgSrc = row.querySelector('img')?.getAttribute('src') || '';
+            const itemName = row.children[1].textContent.trim();
+            const qty = row.children[2].textContent.trim();
+            const subtotal = row.children[4].textContent.trim();
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><img src="${imgSrc}" alt="${itemName}" width="50" height="50" class="rounded"></td>
+                <td>${itemName}</td>
+                <td class="text-center">${qty}</td>
+                <td class="text-end">${subtotal}</td>
+            `;
+            confirmItems.appendChild(tr);
+        });
+
+        confirmModal.show();
+    });
+
+    confirmSubmitBtn.addEventListener('click', function() {
+        confirmModal.hide();
+        checkoutForm.submit();
+    });
 });
 </script>
