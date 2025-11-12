@@ -68,7 +68,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
 
             // Simple success message: The page refreshes naturally on POST submission, 
             // but since there's no WHERE clause, the order remains visible.
-            echo '<div class="alert alert-success mt-3">✅ Delivery status updated.</div>';
+            echo "<script>
+            Swal.fire({
+                icon: 'success',
+                title: 'Delivery status updated!',
+                showConfirmButton: false,
+                timer: 1500
+            });
+            </script>";
+
         } catch (PDOException $e) {
             error_log("Delivery update failed: " . $e->getMessage());
             echo '<div class="alert alert-danger mt-3">❌ Error updating delivery status.</div>';
@@ -125,17 +133,24 @@ $orders = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
                         <?php
                             // Determine the status and disable flag based on the order_status
                             $currentStatus = $o['order_status']; 
-                            
-                            $statusClass = match($currentStatus) {
+                                
+                                $statusClass = match($currentStatus) {
                                 'pending'   => 'bg-warning text-dark',
-                                'shipped'   => 'bg-info text-dark', 
+                                'shipped'   => 'bg-info text-dark',
                                 'delivered' => 'bg-success text-white',
-                                'cancellation_requested', 'cancelled' => 'bg-danger text-white', 
+                                'completed' => 'bg-primary text-white', // ✅ Blue for completed
+                                'cancellation_requested', 'cancelled' => 'bg-danger text-white',
                                 default     => 'bg-secondary text-white'
                             };
+
                             
                             // Status update disabled if cancellation is requested or approved/rejected
-                            $disableStatus = ($currentStatus === 'cancellation_requested' || $currentStatus === 'cancelled');
+                            $disableStatus = in_array($currentStatus, [
+                                'cancellation_requested',
+                                'cancelled',
+                                'completed' // ✅ lock completed orders
+                            ]);
+
                         ?>
                         <tr>
                             <td class="fw-bold text-center">#<?php echo (int)$o['order_id']; ?></td>
@@ -153,13 +168,15 @@ $orders = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
                                         <select name="status" class="form-select form-select-sm <?php echo $statusClass; ?>" 
                                                 onchange="this.form.submit()">
                                             <?php 
-                                                $statusOptions = [
-                                                    'pending'   => 'Pending',
-                                                    'shipped'   => 'Preparing', // Display as Preparing, Submit as Shipped
-                                                    'delivered' => 'Delivered'
-                                                ];
+                                             $statusOptions = [
+                                                'pending'   => 'Pending',
+                                                'shipped'   => 'Preparing', // Display as Preparing, Submit as Shipped
+                                                'delivered' => 'Delivered',
+                                                'completed' => 'Completed' // ✅ Add this
+                                            ];
                                             ?>
                                             <?php foreach ($statusOptions as $value => $label): ?>
+
                                                 <option value="<?php echo $value; ?>" <?php if($currentStatus === $value) echo 'selected'; ?>>
                                                     <?php echo $label; ?>
                                                 </option>

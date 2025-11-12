@@ -266,80 +266,81 @@ $orders = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <?php foreach ($orders as $o): ?>
+               <?php foreach ($orders as $o): ?>
                         <?php
-                            // Determine the status and disable flag based on the order_status
-                            $currentStatus = $o['order_status']; 
-                            
+                            $currentStatus = $o['order_status'];
+
+                            // Badge class
                             $statusClass = match($currentStatus) {
-                                // MODIFIED: Confirmed 'pending' status is yellow (bg-warning) and requires black text (text-dark).
                                 'pending'   => 'bg-warning text-dark',
-                                'shipped'   => 'bg-info text-dark', // 'shipped' maps to bg-info
+                                'shipped'   => 'bg-info text-dark',
                                 'delivered' => 'bg-success text-white',
-                                'cancellation_requested', 'cancelled' => 'bg-danger text-white', 
-                                default     => 'bg-secondary text-white'
+                                'cancellation_requested', 'cancelled' => 'bg-danger text-white',
+                                'completed' => 'bg-success text-white', // Customer confirmed
+                                default => 'bg-secondary text-white'
                             };
-                            
-                            // Status update disabled if cancellation is requested or approved/rejected
-                            $disableStatus = ($currentStatus === 'cancellation_requested' || $currentStatus === 'cancelled');
+
+                            // Disable editing for cancelled, cancellation_requested, and completed
+                            $disableStatus = in_array($currentStatus, ['cancellation_requested', 'cancelled', 'completed']);
                         ?>
-                        <tr>
-                            <td class="fw-bold text-center">#<?php echo (int)$o['order_id']; ?></td>
-                            <td><?php echo htmlspecialchars($o['customer_name'] ?? 'Guest'); ?></td>
-                            <td class="fw-semibold text-end">₱<?php echo number_format($o['total'], 2); ?></td>
-                            <td class="text-muted"><?php echo htmlspecialchars($o['created_at']); ?></td>
-                            <td class="text-center">
-                                <?php if ($disableStatus): ?>
-                                    <span class="badge <?php echo $statusClass; ?>">
+                        <tr <?= $currentStatus === 'completed' ? 'class="table-success"' : '' ?>>
+                            <td class="fw-bold text-center">#<?= (int)$o['order_id']; ?></td>
+                            <td><?= h($o['customer_name'] ?? 'Guest'); ?></td>
+                            <td class="fw-semibold text-end">₱<?= number_format($o['total'], 2); ?></td>
+                            <td class="text-muted"><?= h($o['created_at']); ?></td>
+
+                          <td class="text-center">
+                            <?php 
+                            // Include 'completed' in disabled statuses
+                            $disableStatus = in_array($currentStatus, ['cancellation_requested', 'cancelled', 'completed']); 
+                            ?>
+                            
+                            <?php if ($disableStatus): ?>
+                                <span class="badge <?= $statusClass; ?>">
+                                    <?= $currentStatus === 'completed' ? 'Received' : ucfirst(str_replace('_', ' ', $currentStatus)); ?>
+                                </span>
+                            <?php else: ?>
+                                <form method="post" class="d-inline">
+                                    <input type="hidden" name="order_id" value="<?= (int)$o['order_id']; ?>">
+                                    <select name="status" class="form-select form-select-sm <?= $statusClass; ?>" onchange="this.form.submit()">
                                         <?php 
-                                            // DISPLAY 'Preparing' instead of 'Shipped' for admin view of disabled status
-                                            if ($currentStatus === 'shipped') {
-                                                echo 'Preparing';
-                                            } else {
-                                                echo ucfirst(str_replace('_', ' ', $currentStatus)); 
-                                            }
+                                            $statusOptions = [
+                                                'pending' => 'Pending',
+                                                'shipped' => 'Preparing', 
+                                                'delivered' => 'Delivered'
+                                            ];
                                         ?>
-                                    </span>
-                                <?php else: ?>
-                                    <form method="post" class="d-inline">
-                                        <input type="hidden" name="order_id" value="<?php echo (int)$o['order_id']; ?>">
-                                        <select name="status" class="form-select form-select-sm <?php echo $statusClass; ?>" 
-                                                onchange="this.form.submit()">
-                                            <?php 
-                                                // Display 'Preparing' but submit 'shipped' to the DB
-                                                $statusOptions = [
-                                                    'pending'   => 'Pending',
-                                                    'shipped'   => 'Preparing', // CHANGED DISPLAY TEXT
-                                                    'delivered' => 'Delivered'
-                                                ];
-                                            ?>
-                                            <?php foreach ($statusOptions as $value => $label): ?>
-                                                <option value="<?php echo $value; ?>" <?php if($currentStatus === $value) echo 'selected'; ?>>
-                                                    <?php echo $label; ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </form>
-                                <?php endif; ?>
-                            </td>
+                                        <?php foreach ($statusOptions as $value => $label): ?>
+                                            <option value="<?= $value ?>" <?php if ($currentStatus === $value) echo 'selected'; ?>>
+                                                <?= $label ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </form>
+                            <?php endif; ?>
+                        </td>
+
+
+                            <!-- Delivery Date -->
                             <td class="text-center">
                                 <form method="post" class="d-inline">
-                                    <input type="hidden" name="order_id" value="<?php echo (int)$o['order_id']; ?>">
-                                    <input type="hidden" name="status" value="<?php echo htmlspecialchars($o['delivery_status'] ?? 'pending'); ?>">
+                                    <input type="hidden" name="order_id" value="<?= (int)$o['order_id']; ?>">
+                                    <input type="hidden" name="status" value="<?= h($o['delivery_status'] ?? 'pending'); ?>">
                                     <input type="date" name="delivery_date" class="form-control form-control-sm" 
-                                           value="<?php echo htmlspecialchars($o['delivery_date'] ?? ''); ?>" onchange="this.form.submit()"
-                                           <?php echo $disableStatus ? 'disabled' : ''; ?>>
+                                        value="<?= h($o['delivery_date'] ?? ''); ?>" onchange="this.form.submit()"
+                                        <?= $disableStatus ? 'disabled' : ''; ?>>
                                 </form>
                             </td>
+
+                            <!-- Actions -->
                             <td class="text-center">
-                                <a class="btn btn-sm btn-outline-primary" href="order_details.php?id=<?php echo (int)$o['order_id']; ?>">
+                                <a class="btn btn-sm btn-outline-primary" href="order_details.php?id=<?= (int)$o['order_id']; ?>">
                                     View Details
                                 </a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
-                </tbody>
+
             </table>
         </div>
     <?php else: ?>
@@ -464,4 +465,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-orders.php

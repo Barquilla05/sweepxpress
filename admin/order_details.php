@@ -26,10 +26,10 @@ function get_status_badge_class($status) {
     $status = strtolower($status);
     
     return match($status) {
-        'delivered', 'completed' => 'bg-success text-white', // Green for delivered
+        'delivered', 'completed' => 'bg-success text-white', // Green for delivered/completed
         'preparing', 'shipped' => 'bg-info text-white',      // Blue for preparing (now includes shipped)
-        'pending' => 'bg-warning text-dark',                // Yellow for pending (needs dark text)
-        'cancelled' => 'bg-danger text-white',              // Red for cancelled
+        'pending' => 'bg-warning text-dark',                 // Yellow for pending (needs dark text)
+        'cancelled' => 'bg-danger text-white',               // Red for cancelled
         default => 'bg-secondary text-white'
     };
 }
@@ -61,6 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
         $deliveryExists = $stmt->fetch();
 
         try {
+            // NOTE: Kung ang order status sa main table ay 'completed', dapat hindi na mag-e-execute
+            // ang UPDATE/INSERT na ito. Pero para masigurado, hindi mo na ma-a-access ang form.
+
             if ($deliveryExists) {
                 // UPDATE existing delivery record
                 $updateStmt = $pdo->prepare("UPDATE deliveries SET status=?, delivery_date=? WHERE order_id=?");
@@ -134,6 +137,9 @@ try {
     $stmtDelivery->execute([$orderId]);
     $delivery = $stmtDelivery->fetch(PDO::FETCH_ASSOC);
 
+    // 💡 NEW CHECK: Check if the order is completed
+    $isCompleted = (strtolower($order['status']) === 'completed');
+
 } catch (PDOException $e) {
     die("<div class='container p-5'><div class='alert alert-danger'>Database error: " . h($e->getMessage()) . "</div></div>");
 }
@@ -190,6 +196,13 @@ try {
                     <h5>🚚 Manage Delivery</h5>
                 </div>
                 <div class="card-body">
+                    
+                    <?php if ($isCompleted): ?>
+                        <div class="alert alert-success fw-bold" role="alert">
+                            <i class="fas fa-lock me-2"></i> **Order Completed!** This record is locked as the customer has confirmed receipt.
+                        </div>
+                    <?php endif; ?>
+
                     <h6 class="fw-bold mb-2">Shipping Information</h6>
                     <p class="mb-3"><strong>Address:</strong> <?= nl2br(h($order['address'])); ?></p>
                     <p class="mb-4">
@@ -202,18 +215,25 @@ try {
                     <form method="post" class="row g-3">
                         <div class="col-md-6">
                             <label for="status" class="form-label fw-bold">Update Status</label>
-                            <select name="status" id="status" class="form-select" required>
+                            <select name="status" id="status" class="form-select" required <?= $isCompleted ? 'disabled' : ''; ?>>
                                 <?php
                                 // --- UPDATED STATUS LIST FOR THE DROPDOWN ---
-                                $statuses = ['pending','preparing','delivered','cancelled'];
+                                $statuses = ['pending','preparing','delivered','cancelled','completed']; // Added completed
                                 $currentStatus = $delivery['status'] ?? 'pending';
                                 
-                                // Map old 'shipped' back to 'preparing' for display consistency
                                 $displayStatus = (strtolower($currentStatus) === 'shipped') ? 'preparing' : $currentStatus;
 
                                 foreach ($statuses as $s) {
-                                    $sel = (strtolower($displayStatus) === $s) ? 'selected' : '';
-                                    echo "<option value='$s' $sel>".ucfirst($s)."</option>";
+                                    // Only allow 'completed' to be selected if the current status is completed
+                                    if ($isCompleted && $s !== 'completed') {
+                                        $sel = (strtolower($displayStatus) === $s) ? 'selected' : '';
+                                        // Skip other statuses if order is completed
+                                        if (strtolower($s) !== 'completed') continue; 
+                                    } else {
+                                        $sel = (strtolower($displayStatus) === $s) ? 'selected' : '';
+                                    }
+
+                                    echo "<option value='$s' $sel>".ucfirst(h($s))."</option>";
                                 }
                                 ?>
                             </select>
@@ -221,11 +241,11 @@ try {
                         <div class="col-md-6">
                             <label for="delivery_date" class="form-label fw-bold">Delivery Date (Optional)</label>
                             <input type="date" name="delivery_date" id="delivery_date" 
-                                   value="<?= $delivery['delivery_date'] ?? ''; ?>" 
-                                   class="form-control">
-                        </div>
+                                       value="<?= $delivery['delivery_date'] ?? ''; ?>" 
+                                       class="form-control"
+                                       <?= $isCompleted ? 'disabled' : ''; ?>> </div>
                         <div class="col-12">
-                            <button type="submit" class="btn btn-success mt-2 w-100 fw-bold">
+                            <button type="submit" class="btn btn-success mt-2 w-100 fw-bold" <?= $isCompleted ? 'disabled' : ''; ?>>
                                 <i class="fas fa-truck-moving me-1"></i> Update Delivery
                             </button>
                         </div>

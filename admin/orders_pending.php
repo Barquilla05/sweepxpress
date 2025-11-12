@@ -14,51 +14,28 @@ if (!is_admin()) {
     header("Location: /sweepxpress/login.php");
     exit;
 }
-require_once __DIR__ . '/../includes/header.php';
-?>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<?php
 
 // ====================================================================
-// 1. DISPLAY SUCCESS MESSAGE AFTER REDIRECT
+// ✅ NEW SEQUENCE: 1. Handle delivery status and date update (POST)
 // ====================================================================
-if (isset($_GET['success'], $_GET['status'])) {
-    $orderId = h($_GET['success']);
-    $newStatus = h($_GET['status']);
-
-    // Display SweetAlert message and then remove the query parameters from the URL
-    echo "<script>
-    document.addEventListener('DOMContentLoaded', () => {
-      Swal.fire({
-        icon: 'success',
-        title: 'Status Updated!',
-        text: 'Order #{$orderId} status changed to {$newStatus}. It has been moved off the Purchase Order list.',
-        confirmButtonColor: '#3085d6'
-      }).then(() => {
-        // Clear URL parameters without reloading again
-        if (history.replaceState) {
-            history.replaceState(null, null, window.location.pathname);
-        }
-      });
-    });
-    </script>";
-}
-
-// ====================================================================
-// 2. Handle delivery status and date update 
-// ====================================================================
+// Ginawa itong Section 1 para mauna sa anumang output.
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['status'])) {
     $orderId = $_POST['order_id'];
     $status = $_POST['status'];
     $deliveryDate = $_POST['delivery_date'] ?? null;
 
+    // Fetch current status before updating
     $currentOrderStmt = $pdo->prepare("SELECT status FROM orders WHERE id = ?");
     $currentOrderStmt->execute([$orderId]);
     $currentStatus = $currentOrderStmt->fetchColumn();
 
     if ($currentStatus === 'cancelled' || $currentStatus === 'cancellation_requested') {
-         echo '<div class="alert alert-warning mt-3">⚠️ Cannot update status: Order is currently ' . h(ucfirst(str_replace('_', ' ', $currentStatus))) . '.</div>';
+        // Since we are moving the POST logic up, we need to redirect with a warning.
+        // Iiwan ko muna itong error_log at ire-refresh ang page para hindi maipit.
+        error_log('Attempt to update cancelled order: ' . $orderId);
+        // Gumawa ng temporary variable para ipakita ang warning pagkatapos mag-redirect
+        $post_warning = 'update_denied_cancelled';
     } else {
         try {
             // Logic to update delivery or insert new delivery record (deliveries table)
@@ -70,7 +47,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
                 $updateStmt = $pdo->prepare("UPDATE deliveries SET status=?, delivery_date=? WHERE order_id=?");
                 $updateStmt->execute([$status, $deliveryDate, $orderId]);
             } else {
-                $infoStmt = $pdo->prepare("SELECT o.address, u.name AS customer_name FROM orders o JOIN users u ON o.user_id = u.id WHERE o.id = ?");
+                // Fetch customer info for new delivery record
+                // NOTE: Use 'o.customer_name' instead of JOIN on 'users' in case of guest orders
+                $infoStmt = $pdo->prepare("SELECT o.address, o.customer_name FROM orders o WHERE o.id = ?");
                 $infoStmt->execute([$orderId]);
                 $customer_info = $infoStmt->fetch();
 
@@ -88,17 +67,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['s
             $updateOrderStmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
             $updateOrderStmt->execute([$status, $orderId]);
 
-            // FIX: Use PHP header redirect to force the page to re-filter and make the order vanish
+            // ✅ FIX APPLIED HERE: PHP header redirect
             $redirectStatus = urlencode(ucfirst(str_replace('_', ' ', $status)));
             header("Location: orders_pending.php?success={$orderId}&status={$redirectStatus}");
             exit; 
             
         } catch (PDOException $e) {
             error_log("Delivery update failed: " . $e->getMessage());
-            echo '<div class="alert alert-danger mt-3">❌ Error updating delivery status.</div>';
+            $post_warning = 'update_failed';
         }
     }
+
+    // Kung hindi na-redirect dahil sa error o warning, i-redirect nang walang success message para ma-clear ang POST
+    if (!isset($post_warning)) {
+        header("Location: orders_pending.php");
+        exit;
+    }
 }
+// ====================================================================
+// END POST HANDLING (Laging dapat mauna ito)
+// ====================================================================
+
+// Ngayon lang i-require ang header, dahil tapos na ang lahat ng header() calls.
+require_once __DIR__ . '/../includes/header.php';
+?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<?php
+
+// ====================================================================
+// 2. DISPLAY SUCCESS/WARNING MESSAGE AFTER REDIRECT/POST
+// ====================================================================
+
+$swal_title = '';
+$swal_text = '';
+$swal_icon = '';
+
+if (isset($_GET['success'], $_GET['status'])) {
+    $orderId = h($_GET['success']);
+    $newStatus = h($_GET['status']);
+
+    $swal_title = 'Status Updated!';
+    $swal_text = "Order #{$orderId} status changed to {$newStatus}. It has been moved off the Purchase Order list.";
+    $swal_icon = 'success';
+
+} elseif (isset($post_warning)) {
+    if ($post_warning === 'update_denied_cancelled') {
+        $swal_title = 'Action Denied';
+        $swal_text = 'Cannot update status: Order is currently cancelled or cancellation requested.';
+        $swal_icon = 'warning';
+    } elseif ($post_warning === 'update_failed') {
+        $swal_title = 'Update Failed';
+        $swal_text = 'An error occurred while updating the delivery status. Please check logs.';
+        $swal_icon = 'error';
+    }
+}
+
+if (!empty($swal_title)) {
+    // Display SweetAlert message and then remove the query parameters from the URL
+    echo "<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Swal.fire({
+        icon: '{$swal_icon}',
+        title: '{$swal_title}',
+        text: '{$swal_text}',
+        confirmButtonColor: '#3085d6'
+      }).then(() => {
+        // Clear URL parameters without reloading again
+        if (history.replaceState) {
+            // Gumawa ng clean URL
+            let cleanUrl = window.location.pathname;
+            // Kung mayroong 'success' or 'status' sa URL, alisin ito
+            if (window.location.search.includes('success') || window.location.search.includes('status')) {
+                history.replaceState(null, null, cleanUrl);
+            }
+        }
+      });
+    });
+    </script>";
+}
+
 
 // ====================================================================
 // 3. FETCH DATA (Pending Orders Only - The "POs")
@@ -165,7 +212,8 @@ $orders = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
                                             // The status options for a Pending list
                                             $statusOptions = [
                                                 'pending'   => 'Pending',
-                                                'shipped'   => 'Preparing/Processing', // Changed label for clarity
+                                                // Note: 'shipped' maps to 'preparing' in delivery logic but we can use 'shipped' here as a distinct user action.
+                                                'shipped'   => 'Preparing/Processing', 
                                                 'delivered' => 'Delivered'
                                             ];
                                         ?>
@@ -182,7 +230,7 @@ $orders = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
                                     <input type="hidden" name="order_id" value="<?php echo (int)$o['order_id']; ?>">
                                     <input type="hidden" name="status" value="<?php echo h($o['delivery_status'] ?? 'pending'); ?>">
                                     <input type="date" name="delivery_date" class="form-control form-control-sm" 
-                                           value="<?php echo h($o['delivery_date'] ?? ''); ?>" onchange="this.form.submit()">
+                                            value="<?php echo h($o['delivery_date'] ?? ''); ?>" onchange="this.form.submit()">
                                 </form>
                             </td>
                             <td class="text-center">
