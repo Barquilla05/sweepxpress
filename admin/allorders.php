@@ -32,11 +32,16 @@ $cancellationRequests = $pdo->query("SELECT COUNT(*) AS cnt FROM orders WHERE st
 // Card 4: Orders Complete (Using 'delivered' status for completion)
 $ordersComplete = $pdo->query("SELECT COUNT(*) AS cnt FROM orders WHERE status = 'delivered'")->fetch()['cnt'];
 
+// ** NEW QUERY: All Orders Archive (Includes ALL statuses, same as totalOrders) **
+// Using the same query as $totalOrders to get the total count for the archive card.
+$archivedOrders = $pdo->query("SELECT COUNT(*) AS cnt FROM orders")->fetch()['cnt'];
+
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <style>
     body { background: #f5f7fa; font-family: 'Inter', sans-serif; }
     h1, h6 { font-weight: 600; }
@@ -64,37 +69,46 @@ require_once __DIR__ . '/../includes/header.php';
         padding: 1.5rem;
         text-align: right;
     }
+    /* Para pantay ang 5 cards, gagawing 1/5 ang column */
+    .col-md-5th {
+        width: 20%; 
+    }
 </style>
 
 <div class="container-fluid p-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="fw-bold text-primary">Orders Dashboard</h1>
-        <a href="dashboard.php" class="btn btn-secondary shadow-sm">⬅ Back to Main Dashboard</a>
+        <div class="d-flex gap-2">
+            <a href="generate_pdf.php?status=all" target="_blank" class="btn btn-danger shadow-sm">
+                <i class="fas fa-file-pdf"></i> Generate All Orders PDF
+            </a>
+            <a href="dashboard.php" class="btn btn-secondary shadow-sm">⬅ Back to Main Dashboard</a>
+        </div>
     </div>
 
-    <div class="row g-3 mb-4 text-center d-flex align-items-stretch">
+    <div class="row g-3 mb-4 text-center d-flex align-items-stretch justify-content-start">
         
-        <div class="col-md-3 d-flex">
+        <div class="col-6 col-md-3 d-flex"> 
             <a href="order_all.php" class="order-stat-link card shadow-sm bg-primary text-white flex-grow-1">
                 <div class="order-stat-card d-flex flex-column justify-content-center">
-                    <h6>Orders</h6>
+                    <h6>Regular Orders</h6>
                     <h4><?php echo h($totalOrders); ?></h4>
-                    <span class="badge bg-light text-primary badge-custom">View All</span>
+                    <span class="badge bg-light text-primary badge-custom">Customer Orders</span>
                 </div>
             </a>
         </div>
         
-        <div class="col-md-3 d-flex">
+        <div class="col-6 col-md-3 d-flex">
             <a href="orders_pending.php" class="order-stat-link card shadow-sm bg-warning text-dark flex-grow-1">
                 <div class="order-stat-card d-flex flex-column justify-content-center">
-                    <h6>Purchase Orders</h6>
+                    <h6>Purchase Order</h6>
                     <h4><?php echo h($pendingOrders); ?></h4>
-                    <span class="badge bg-dark text-warning badge-custom">Process Now</span>
+                    <span class="badge bg-dark text-warning badge-custom">Business Orders</span>
                 </div>
             </a>
         </div>
         
-        <div class="col-md-3 d-flex">
+        <div class="col-6 col-md-3 d-flex">
             <a href="orders_cancellation.php" class="order-stat-link card shadow-sm bg-danger text-white flex-grow-1">
                 <div class="order-stat-card d-flex flex-column justify-content-center">
                     <h6>Cancellation Request</h6>
@@ -104,12 +118,22 @@ require_once __DIR__ . '/../includes/header.php';
             </a>
         </div>
         
-        <div class="col-md-3 d-flex">
+        <div class="col-6 col-md-3 d-flex">
             <a href="orders_completed.php" class="order-stat-link card shadow-sm bg-success text-white flex-grow-1">
                 <div class="order-stat-card d-flex flex-column justify-content-center">
                     <h6>Orders Complete</h6>
                     <h4><?php echo h($ordersComplete); ?></h4>
                     <span class="badge bg-light text-success badge-custom">View History</span>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-12 col-md-3 d-flex"> 
+            <a href="orders_archive_all.php" class="order-stat-link card shadow-sm bg-info text-white flex-grow-1">
+                <div class="order-stat-card d-flex flex-column justify-content-center">
+                    <h6>All Orders Archive</h6>
+                    <h4><?php echo h($archivedOrders); ?></h4>
+                    <span class="badge bg-dark text-info badge-custom">All Statuses Included</span>
                 </div>
             </a>
         </div>

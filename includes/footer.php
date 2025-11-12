@@ -1,24 +1,23 @@
-<!-- 🌿 SweepXpress Blue Theme Footer -->
 <footer class="site-footer">
     <div class="footer-container">
         <div class="footer-grid">
             <div class="footer-column">
                 <h3>Contact Us</h3>
                 <p><i class="fas fa-phone-alt"></i> (63) 761-77232</p>
-                <p><i class="fas fa-envelope"></i> Huesales@hotmail.com</p>
+                <p><i class="fas fa-envelope"></i> sweepxpress@gmail.com</p>
             </div>
 
             <div class="footer-column">
-            <h3>Products</h3>
-            <ul>
-                <li><a href="/sweepxpress/index.php?category=Cleaning+Supplies">Cleaning Supplies</a></li>
+                <h3>Products</h3>
+                <ul>
+                 <li><a href="/sweepxpress/index.php?category=Cleaning+Supplies">Cleaning Supplies</a></li>
                 <li><a href="/sweepxpress/index.php?category=Tapes+%26+Adhesives">Tapes & Adhesives</a></li>
                 <li><a href="/sweepxpress/index.php?category=Equipment">Equipment</a></li>
                 <li><a href="/sweepxpress/index.php?category=Floor+Mats">Floor Mats</a></li>
                 <li><a href="/sweepxpress/index.php?category=Tools+%26+Accessories">Tools & Accessories</a></li>
                 <li><a href="/sweepxpress/index.php">All Products</a></li>
-            </ul>
-        </div>
+                </ul>
+            </div>
 
             <div class="footer-column">
                 <h3>Company</h3>
@@ -49,13 +48,13 @@
     </div>
 </footer>
 
-<!-- 🌈 Blue Footer Styling to Match Header -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
 
 .site-footer {
-    background: linear-gradient(135deg, #3366ff, #5588ff); /* Blue gradient same as header accent */
-    color: #ffffff;
+    /* Changed background to solid #99ccff */
+    background: #99ccff;
+    color: #000000; /* Primary text color changed to black */
     padding: 40px 0 20px;
     font-family: 'Poppins', sans-serif;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
@@ -77,7 +76,7 @@
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 12px;
-    color: #ffffff;
+    color: #000000; /* Heading text color changed to black */
     position: relative;
 }
 
@@ -88,14 +87,15 @@
     bottom: -5px;
     width: 40px;
     height: 2px;
-    background-color: #99bbff; /* Lighter blue accent line */
+    /* Changed accent line color to black for visibility */
+    background-color: #000000;
     border-radius: 2px;
 }
 
 .footer-column p {
     margin: 6px 0;
     font-size: 14px;
-    color: #e0e0e0;
+    color: #333333; /* Slightly darker grey for contact info for readability */
 }
 
 .footer-column ul {
@@ -108,15 +108,15 @@
 }
 
 .footer-column ul li a {
-    color: #d0e2ff;
+    color: #000000; /* Link text color changed to black */
     text-decoration: none;
     font-size: 14px;
     transition: all 0.3s ease;
 }
 
 .footer-column ul li a:hover {
-    color: #ffffff;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+    color: #333333; /* Hover color for better visual feedback */
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
 }
 
 .social-icons {
@@ -124,24 +124,25 @@
 }
 
 .social-icons a {
-    color: #ffffff;
+    color: #000000; /* Social icon color changed to black */
     font-size: 18px;
     margin-right: 14px;
     transition: transform 0.3s, color 0.3s;
 }
 
 .social-icons a:hover {
-    color: #99bbff;
+    color: #333333; /* Social icon hover color */
     transform: scale(1.2);
 }
 
 .footer-bottom {
-    border-top: 1px solid rgba(255,255,255,0.2);
+    /* Changed border color to dark grey for better contrast */
+    border-top: 1px solid rgba(0,0,0,0.2);
     margin-top: 35px;
     padding-top: 12px;
     text-align: center;
     font-size: 14px;
-    color: #e0e6ff;
+    color: #333333; /* Bottom text color */
 }
 
 .footer-links {
@@ -149,7 +150,7 @@
 }
 
 .footer-links a {
-    color: #c9d8ff;
+    color: #000000; /* Bottom link color changed to black */
     margin: 0 10px;
     text-decoration: none;
     font-size: 13px;
@@ -157,7 +158,7 @@
 }
 
 .footer-links a:hover {
-    color: #ffffff;
+    color: #333333; /* Bottom link hover color */
 }
 
 /* Responsive */

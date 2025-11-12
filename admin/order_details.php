@@ -20,16 +20,14 @@ if (!function_exists('h')) {
 }
 
 // --- UPDATED HELPER FUNCTION ---
-// Implements the new status colors and mapping.
 function get_status_badge_class($status) {
-    // Normalize status to lowercase for comparison
     $status = strtolower($status);
     
     return match($status) {
-        'delivered', 'completed' => 'bg-success text-white', // Green for delivered/completed
-        'preparing', 'shipped' => 'bg-info text-white',      // Blue for preparing (now includes shipped)
-        'pending' => 'bg-warning text-dark',                 // Yellow for pending (needs dark text)
-        'cancelled' => 'bg-danger text-white',               // Red for cancelled
+        'delivered', 'completed' => 'bg-success text-white',
+        'preparing', 'shipped' => 'bg-info text-white',
+        'pending' => 'bg-warning text-dark',
+        'cancelled' => 'bg-danger text-white',
         default => 'bg-secondary text-white'
     };
 }
@@ -46,14 +44,13 @@ if (!$orderId) {
 $message = '';
 
 // =======================================================================
-// 1. HANDLE DELIVERY UPDATE 
+// 1. HANDLE DELIVERY UPDATE (PHP Logic)
 // =======================================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
     $status = $_POST['status'] ?? null;
     $date = $_POST['delivery_date'] ?? null;
 
     if ($status) {
-        // Map 'shipped' to 'preparing' if it somehow comes through
         $finalStatus = ($status === 'shipped') ? 'preparing' : $status;
 
         $stmt = $pdo->prepare("SELECT id FROM deliveries WHERE order_id = ?");
@@ -61,15 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
         $deliveryExists = $stmt->fetch();
 
         try {
-            // NOTE: Kung ang order status sa main table ay 'completed', dapat hindi na mag-e-execute
-            // ang UPDATE/INSERT na ito. Pero para masigurado, hindi mo na ma-a-access ang form.
-
             if ($deliveryExists) {
-                // UPDATE existing delivery record
                 $updateStmt = $pdo->prepare("UPDATE deliveries SET status=?, delivery_date=? WHERE order_id=?");
                 $updateStmt->execute([$finalStatus, $date, $orderId]);
             } else {
-                // INSERT new delivery record
                 $infoStmt = $pdo->prepare("SELECT o.address, o.customer_name FROM orders o WHERE o.id = ?");
                 $infoStmt->execute([$orderId]);
                 $customer_info = $infoStmt->fetch();
@@ -86,7 +78,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
                 ]);
             }
 
-            // Update main orders table status
             $updateOrderStmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
             $updateOrderStmt->execute([$finalStatus, $orderId]);
             
@@ -99,10 +90,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['status'])) {
 }
 
 // =======================================================================
-// 2. FETCH ALL ORDER DATA
+// 2. FETCH ALL ORDER DATA (PHP Logic)
 // =======================================================================
 try {
-    // Fetch order, joining with users for customer data (handles guest orders with LEFT JOIN)
     $stmtOrder = $pdo->prepare("
         SELECT o.*, u.name AS user_name, u.email AS user_email 
         FROM orders o 
@@ -118,11 +108,9 @@ try {
         exit;
     }
 
-    // Set fallback name/email for guest orders
     $order['user_name'] = $order['user_name'] ?? h($order['customer_name']) . ' (Guest)';
     $order['user_email'] = $order['user_email'] ?? 'N/A';
     
-    // Fetch order items
     $stmtItems = $pdo->prepare("
         SELECT oi.*, p.name 
         FROM order_items oi 
@@ -132,12 +120,10 @@ try {
     $stmtItems->execute([$orderId]);
     $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
 
-    // Fetch delivery details
     $stmtDelivery = $pdo->prepare("SELECT * FROM deliveries WHERE order_id = ?");
     $stmtDelivery->execute([$orderId]);
     $delivery = $stmtDelivery->fetch(PDO::FETCH_ASSOC);
 
-    // 💡 NEW CHECK: Check if the order is completed
     $isCompleted = (strtolower($order['status']) === 'completed');
 
 } catch (PDOException $e) {
@@ -146,11 +132,28 @@ try {
 ?>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+    /* Custom style for the PO Due Date box */
+    .po-due-date {
+        background-color: #e0f7fa; /* Light cyan/blue background */
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        border: 1px solid #b2ebf2;
+        font-weight: 600;
+        margin-top: 1rem;
+    }
+</style>
 
 <div class="container p-4 p-lg-5">
-    <a href="allorders.php" class="btn btn-outline-secondary mb-4">
-        <i class="fas fa-arrow-left me-2"></i> Back to All Orders
-    </a>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="allorders.php" class="btn btn-primary shadow-sm">
+            <i class="fas fa-arrow-left me-2"></i> Back to All Orders
+        </a>
+        <a href="generate_order_pdf.php?id=<?= $orderId; ?>" target="_blank" class="btn btn-info text-white shadow-sm">
+            <i class="fas fa-file-pdf me-2"></i> Download Invoice PDF
+        </a>
+    </div>
 
     <div class="d-flex justify-content-between align-items-center mb-5">
         <h1 class="fw-bolder text-dark">
@@ -160,7 +163,6 @@ try {
             Order Status: <?= ucfirst(h($order['status'])); ?>
         </span>
     </div>
-
     <?= $message; ?>
 
     <div class="row g-4">
@@ -186,6 +188,7 @@ try {
                     <p class="mb-1"><strong>Email:</strong> <?= $order['user_email']; ?></p>
                     <p class="mb-1"><strong>Name on Order:</strong> <?= h($order['customer_name']); ?></p>
                     <p class="mb-0"><strong>Notes:</strong> <?= nl2br(h($order['notes'] ?? 'N/A')); ?></p>
+                    
                 </div>
             </div>
         </div>
@@ -210,6 +213,10 @@ try {
                         (<span class="badge bg-dark text-white"><?= h($order['payment_status']); ?></span>)
                     </p>
                     
+                    <div class="po-due-date mb-4">
+                        **PO Due Date (Net 60)** **2026-01-08**
+                    </div>
+                    
                     <hr>
                     
                     <form method="post" class="row g-3">
@@ -217,17 +224,14 @@ try {
                             <label for="status" class="form-label fw-bold">Update Status</label>
                             <select name="status" id="status" class="form-select" required <?= $isCompleted ? 'disabled' : ''; ?>>
                                 <?php
-                                // --- UPDATED STATUS LIST FOR THE DROPDOWN ---
-                                $statuses = ['pending','preparing','delivered','cancelled','completed']; // Added completed
+                                $statuses = ['pending','preparing','delivered','cancelled','completed'];
                                 $currentStatus = $delivery['status'] ?? 'pending';
                                 
                                 $displayStatus = (strtolower($currentStatus) === 'shipped') ? 'preparing' : $currentStatus;
 
                                 foreach ($statuses as $s) {
-                                    // Only allow 'completed' to be selected if the current status is completed
                                     if ($isCompleted && $s !== 'completed') {
                                         $sel = (strtolower($displayStatus) === $s) ? 'selected' : '';
-                                        // Skip other statuses if order is completed
                                         if (strtolower($s) !== 'completed') continue; 
                                     } else {
                                         $sel = (strtolower($displayStatus) === $s) ? 'selected' : '';
@@ -240,12 +244,16 @@ try {
                         </div>
                         <div class="col-md-6">
                             <label for="delivery_date" class="form-label fw-bold">Delivery Date (Optional)</label>
-                            <input type="date" name="delivery_date" id="delivery_date" 
-                                       value="<?= $delivery['delivery_date'] ?? ''; ?>" 
-                                       class="form-control"
-                                       <?= $isCompleted ? 'disabled' : ''; ?>> </div>
+                            <div class="input-group">
+                                <input type="date" name="delivery_date" id="delivery_date" 
+                                                value="<?= $delivery['delivery_date'] ?? ''; ?>" 
+                                                class="form-control"
+                                                <?= $isCompleted ? 'disabled' : ''; ?>>
+                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            </div>
+                        </div>
                         <div class="col-12">
-                            <button type="submit" class="btn btn-success mt-2 w-100 fw-bold" <?= $isCompleted ? 'disabled' : ''; ?>>
+                            <button type="submit" class="btn btn-primary mt-2 w-100 fw-bold" <?= $isCompleted ? 'disabled' : ''; ?>>
                                 <i class="fas fa-truck-moving me-1"></i> Update Delivery
                             </button>
                         </div>

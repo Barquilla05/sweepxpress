@@ -193,9 +193,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <div class="form-floating mb-3">
-              <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-              <label for="password">Password</label>
-            </div>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+            <label for="password">Password</label>
+          </div>
+          <div class="d-flex justify-content-end mb-3">
+            <a href="/sweepxpress/forgot_password.php" class="text-sm text-decoration-none">Forgot Password?</a>
+          </div>
 
             <button type="submit" id="loginButton" class="btn btn-primary btn-lg w-100 mb-3 fw-bold">
                 Login
