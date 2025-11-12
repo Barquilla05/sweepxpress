@@ -1,19 +1,19 @@
 <?php
+// /admin/customer_management.php
+
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../config.php'; // Ensure config.php with $pdo is included
+require_once __DIR__ . '/../includes/log_helper.php'; // Needed for last login check
+
 if (!is_admin()) {
     header("Location: /sweepxpress/login.php");
     exit;
 }
 require_once __DIR__ . '/../includes/header.php';
 
-// Fetch all users with role
-$customers = $pdo->query("
-    SELECT id, name, email, role, created_at
-    FROM users
-    ORDER BY created_at DESC
-")->fetchAll(PDO::FETCH_ASSOC);
+// --- PHP Functions for Styling and Status Logic ---
 
-// Define badge styles for modern look
+// Define badge styles for modern look (Role Badge)
 function get_role_badge_class($role) {
     return match($role) {
         'admin' => 'bg-danger-subtle text-danger',
@@ -21,6 +21,74 @@ function get_role_badge_class($role) {
         'business' => 'bg-success-subtle text-success',
         default => 'bg-secondary-subtle text-secondary'
     };
+}
+
+/**
+ * Determines the status of a user based on suspension and last login time.
+ * @param string|null $suspendedUntil The suspension expiration date from the users table.
+ * @param string|null $lastLoginAt The last successful login time from user_logs.
+ * @return array Contains 'status' string and 'class' for the Bootstrap badge.
+ */
+function get_user_status($suspendedUntil, $lastLoginAt) {
+    $now = new DateTime();
+    $status = 'Active';
+    $badgeClass = 'bg-success'; // Default to Active
+
+    // 1. Check for Suspension (Highest Priority)
+    if (!empty($suspendedUntil)) {
+        $suspensionExpiry = new DateTime($suspendedUntil);
+        if ($now < $suspensionExpiry) {
+            $status = 'Suspended';
+            $badgeClass = 'bg-danger';
+            return ['status' => $status, 'class' => $badgeClass];
+        }
+    }
+
+    // 2. Check for Inactivity (30 days threshold)
+    $inactivityThreshold = new DateTime('-30 days');
+
+    if ($lastLoginAt) {
+        $lastLogin = new DateTime($lastLoginAt);
+        
+        if ($lastLogin < $inactivityThreshold) {
+            $status = 'Inactive';
+            $badgeClass = 'bg-warning text-dark';
+        }
+        // Else: Active (last login is within 30 days)
+    } else {
+        // No successful login logs found
+        $status = 'Inactive'; 
+        $badgeClass = 'bg-warning text-dark'; 
+    }
+    
+    return ['status' => $status, 'class' => $badgeClass];
+}
+
+
+// --- Data Fetching ---
+
+// Fetch all users with role, suspension date, and last login date
+try {
+    $stmt = $pdo->query("
+        SELECT 
+            u.id, 
+            u.name, 
+            u.email, 
+            u.role, 
+            u.created_at, 
+            u.suspended_until, 
+            (
+                SELECT MAX(ul.created_at)
+                FROM user_logs ul
+                WHERE ul.user_id = u.id AND ul.action_type = 'LOGIN_SUCCESS'
+            ) AS last_login_at
+        FROM users u
+        ORDER BY u.created_at DESC
+    ");
+    $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+} catch (PDOException $e) {
+    die("<div class='container p-5'><div class='alert alert-danger'>Database error: Could not fetch users. " . htmlspecialchars($e->getMessage()) . "</div></div>");
 }
 ?>
 
@@ -53,12 +121,16 @@ function get_role_badge_class($role) {
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
+                            <th>Status</th> 
                             <th>Joined</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($customers as $c): ?>
+                            <?php 
+                                $statusData = get_user_status($c['suspended_until'], $c['last_login_at']); 
+                            ?>
                             <tr>
                                 <td class="text-muted fw-bold">#<?= $c['id']; ?></td>
                                 <td><?= htmlspecialchars($c['name']); ?></td>
@@ -70,6 +142,11 @@ function get_role_badge_class($role) {
                                 <td>
                                     <span class="badge rounded-pill <?= get_role_badge_class($c['role']) ?> px-3 py-2">
                                         <?= ucfirst($c['role']) ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill <?= $statusData['class'] ?> px-3 py-2">
+                                        <?= $statusData['status'] ?>
                                     </span>
                                 </td>
                                 <td class="text-muted"><?= date("M d, Y", strtotime($c['created_at'])); ?></td>
@@ -94,6 +171,7 @@ document.getElementById('searchCustomer').addEventListener('keyup', function() {
     let filter = this.value.toLowerCase();
     let rows = document.querySelectorAll("#customerTable tbody tr");
     rows.forEach(row => {
+        // Search across all columns (Name, Email, Role, Status, Joined)
         let text = row.innerText.toLowerCase();
         row.style.display = text.includes(filter) ? "" : "none";
     });

@@ -5,8 +5,9 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Include DB config
-// NOTE: Make sure 'config.php' is correctly configured for $pdo
 require_once __DIR__ . '/config.php';
+// NEW: Include the Log Helper
+require_once __DIR__ . '/includes/log_helper.php';
 
 // Start session if not active
 if (session_status() === PHP_SESSION_NONE) {
@@ -17,26 +18,79 @@ $msg = '';
 
 // Handle Login Form Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // ... (PHP login logic remains the same) ...
     $email = trim($_POST['email'] ?? '');
     $pass = trim($_POST['password'] ?? '');
 
     if ($email && $pass) {
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
+        // IMPORTANT: Ensure suspended_until is fetched
+        $stmt = $pdo->prepare("SELECT *, suspended_until FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $u = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($u && password_verify($pass, $u['password_hash'])) {
             
+            // =========================================================================
+            //  !!! CRITICAL: SUSPENSION CHECK BLOCK !!!
+            // =========================================================================
+            if (!empty($u['suspended_until'])) {
+                
+                $suspension_expiry = new DateTime($u['suspended_until']);
+                $now = new DateTime();
+
+                // If the current time is BEFORE the suspension expiry time, block login.
+                if ($now < $suspension_expiry) {
+                    
+                    $expiry_date_formatted = $suspension_expiry->format('F d, Y \a\t h:i A');
+                    
+                    // 1. DENY LOGIN: Clear session (just in case)
+                    if (session_status() === PHP_SESSION_ACTIVE) {
+                         session_unset(); 
+                    }
+                    
+                    // NEW: Log the attempted login which was blocked by suspension
+                    log_user_action($pdo, $u['id'], 'LOGIN_BLOCKED', 'Login attempt blocked due to active suspension.', null, $_SERVER['REMOTE_ADDR'] ?? null);
+
+                    // 2. Set the message to be displayed on the login page
+                    $_SESSION['suspension_message'] = "
+                        <div class='alert alert-danger p-4 text-center'>
+                            <h4 class='alert-heading'>
+                                <i class='bi bi-shield-fill-exclamation me-2'></i> Account Suspended!
+                            </h4>
+                            <p>Your access is blocked due to an account suspension.</p>
+                            <p class='mb-0'>Access will be automatically restored on: <strong>{$expiry_date_formatted}</strong></p>
+                            <hr>
+                            <p class='mb-0'><small>Please contact support for assistance.</small></p>
+                        </div>
+                    ";
+
+                    header("Location: /sweepxpress/login.php"); 
+                    exit; // <<< THIS 'exit;' STOPS THE LOGIN PROCESS
+                }
+            }
+            // =========================================================================
+            //  !!! END SUSPENSION CHECK !!!
+            // =========================================================================
+            
+            // NEW: Log the successful login action AFTER all checks pass
+            // action_by_id is null because the user is performing the action on themselves
+            log_user_action($pdo, $u['id'], 'LOGIN_SUCCESS', 'User logged in successfully.'); 
+
+            // User is not suspended or suspension expired. Continue with normal login:
             if ($u['role'] === 'customer' || $u['role'] === 'business') {
                 $_SESSION['user'] = $u;
                 header("Location: /sweepxpress/index.php");
                 exit;
             } else {
+                // This is for other roles that don't go to index.php (like admin)
+                // You should probably check for 'admin' and redirect to admin/dashboard here.
                 $msg = "Invalid credentials.";
             }
             
         } else {
+            // NEW: Log login failure for an existing user (if $u is set, meaning email was found)
+            if ($u) {
+                log_user_action($pdo, $u['id'], 'LOGIN_FAILURE', 'Failed password attempt.');
+            }
             $msg = "Invalid email or password.";
         }
     } else {
@@ -123,6 +177,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="text-secondary">Log in to your account</p>
           </div>
           
+          <?php if (isset($_SESSION['suspension_message'])): ?>
+            <?= $_SESSION['suspension_message'] ?>
+            <?php unset($_SESSION['suspension_message']); // Clear the message after display ?>
+          <?php endif; ?>
           <?php if ($msg): ?>
             <div class="alert alert-danger mb-3" role="alert"><?= htmlspecialchars($msg) ?></div>
           <?php endif; ?>
@@ -167,35 +225,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <script>
     document.getElementById('loginForm').addEventListener('submit', function(event) {
-        // Prevent default form submission initially
-        // event.preventDefault(); 
         
         const button = document.getElementById('loginButton');
         
-        // 1. Disable the button
         button.disabled = true;
         
-        // 2. Add the spinner HTML and change the text
         button.innerHTML = `
             <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
             Logging in...
         `;
-        
-        // 3. Since we didn't preventDefault() in the final version, the form will submit normally after the button is modified.
-        // If you had complex JS validation, you would use event.preventDefault() and then manually submit using form.submit() here.
     });
-
-    // NOTE: This check ensures that if the server returns an error ($msg is shown), 
-    // the button state is reset when the page reloads.
-    document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        // Assuming your PHP logic doesn't clear the error, the page reload is the key indicator.
-        // You might consider adding a URL parameter (e.g., ?error=1) on failure to handle this more gracefully.
-        
-        // For simplicity, if the error message is visible, the button will be in its default state
-        // because the page was reloaded by the server and we didn't proceed to a new page.
-    });
-
   </script>
 </body>
 </html>
