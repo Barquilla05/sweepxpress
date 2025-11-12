@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Nov 12, 2025 at 10:51 AM
+-- Generation Time: Nov 12, 2025 at 04:09 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.1.25
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -66,7 +66,8 @@ INSERT INTO `deliveries` (`id`, `order_id`, `customer_name`, `address`, `status`
 (27, 46, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', '2025-11-13', '2025-11-12 05:44:14'),
 (28, 47, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', NULL, '2025-11-12 05:55:59'),
 (29, 48, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', '2025-11-12', '2025-11-12 06:07:42'),
-(30, 49, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', '2025-11-14', '2025-11-12 07:44:42');
+(30, 49, 'IAN PAUL BARQUILLA', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', '', '2025-11-14', '2025-11-12 07:44:42'),
+(31, 50, 'Ian paul Barquilla', '100 jasmin street, Roxas, Quezon City, Metro Manila', '', '0000-00-00', '2025-11-12 14:52:32');
 
 -- --------------------------------------------------------
 
@@ -91,7 +92,7 @@ INSERT INTO `inventory` (`id`, `product_id`, `location_id`, `quantity`, `updated
 (2, 11, 1, 1011, '2025-11-01 13:23:25'),
 (3, 8, 1, 168, '2025-11-12 06:07:33'),
 (4, 16, 1, 12, '2025-10-07 06:00:08'),
-(5, 7, 1, 206, '2025-11-01 15:24:46'),
+(5, 7, 1, 205, '2025-11-12 14:53:01'),
 (6, 9, 1, 33, '2025-11-12 07:39:01'),
 (7, 17, 1, 100, '2025-10-10 10:05:58'),
 (8, 12, 1, 4, '2025-10-14 16:28:41'),
@@ -183,7 +184,10 @@ INSERT INTO `orders` (`id`, `user_id`, `total`, `address`, `status`, `created_at
 (46, 12, 1100.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 05:43:59', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C'),
 (47, 12, 1300.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 05:55:47', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C'),
 (48, 12, 300.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 06:07:33', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C'),
-(49, 12, 150.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 07:39:01', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C');
+(49, 12, 150.00, '98 JASMIN ST ROXAS DISTRICT QUEZON CITY, Roxas, Quezon city, Metro Manila', 'completed', '2025-11-12 07:39:01', 'COD', 'Pending', 'IAN PAUL BARQUILLA', '', NULL, NULL, NULL, NULL, 'B2C'),
+(50, 14, 70.00, '100 jasmin street, Roxas, Quezon City, Metro Manila', 'preparing', '2025-11-12 14:44:58', 'COD', 'Pending', 'Ian paul Barquilla', '', NULL, '', NULL, NULL, 'B2C'),
+(51, 14, 110.00, '100 jasmin street, Roxas, Quezon City, Metro Manila', 'pending', '2025-11-12 14:53:01', 'COD', 'Pending', 'Ian paul Barquilla', '', NULL, NULL, NULL, NULL, 'B2C'),
+(52, 15, 1100.00, '100 jasmin street, Roxas, Quezon CIty, Metro Manila', 'pending', '2025-11-12 14:55:55', 'COD', 'Pending', 'Ian Paul Barquilla', '', NULL, '', NULL, NULL, 'B2C');
 
 -- --------------------------------------------------------
 
@@ -273,7 +277,10 @@ INSERT INTO `order_items` (`id`, `order_id`, `product_id`, `quantity`, `price`) 
 (92, 46, 21, 1, 1100.00),
 (93, 47, 26, 1, 1300.00),
 (94, 48, 8, 1, 300.00),
-(95, 49, 9, 1, 150.00);
+(95, 49, 9, 1, 150.00),
+(96, 50, 25, 1, 70.00),
+(97, 51, 7, 1, 110.00),
+(98, 52, 21, 1, 1100.00);
 
 -- --------------------------------------------------------
 
@@ -324,8 +331,7 @@ INSERT INTO `products` (`id`, `name`, `category`, `sku`, `description`, `price`,
 (23, 'Plain 3M Nomad Z Web Mat', 'Floor Mats', 'NMZW-023', 'a durable, all-vinyl floor mat having an open, continuously patterned surface.', 50.00, NULL, '/sweepxpress/assets/Plain 3M Nomad Z Web Mat.webp', '2025-09-15 09:21:09', 0, NULL),
 (24, 'Scotch Brite Ultra Fine Hand Sanding', 'Tools & Accessories', 'SBUF-024', 'a load-resistant, non-woven abrasive pad that uses silicon carbide to achieve a fine, uniform finish, effectively replacing steel wool without the risks of rust, splintering, or shredding.', 20.00, NULL, '/sweepxpress/assets/Scotch Brite Ultra Fine Hand Sanding.jpg', '2025-09-15 09:21:09', 0, NULL),
 (25, 'ScotchBrite Grout Brush', 'Tools & Accessories', 'SBGB-025', 'Easily clean in nooks and crannies with the Scotch-Brite Grout & Detail Brush. Its powerful non-scratch bristles are safe on grout, tile, bathroom fixtures, faucets, drains, and more! The Scotch-Brite® Grout & Detail Brush features antimicrobial bristle protection* that works to prevent bacterial odors. Get the most out of this durable, reusable brush with a thorough cleaning after use.', 70.00, NULL, '/sweepxpress/assets/ScotchBrite Grout Brush.jpg', '2025-09-15 09:21:09', 0, NULL),
-(26, '3M Carpet Map', 'Floor Mats', '3MCM-026', 'A 3M carpet mat is an entrance mat designed to trap dirt and moisture, protecting indoor floors. These mats use dual-fiber construction (often nylon and polypropylene) to scrape, hide, and absorb dirt and water from footwear, keeping the interior clean and safe. Key features include durability for high-traffic areas, non-slip backing to prevent movement, and an easy-to-clean design that typically involves regular vacuuming', 1300.00, NULL, '/sweepxpress/uploads/1762169135_6908912f37889.jpg', '2025-10-15 16:38:09', 0, NULL),
-(27, 'Ian Paul Barquilla', 'Equipment', 'IPB-6381', 'QSALKFDJSDFUJHSDG', 999999.00, NULL, '/sweepxpress/uploads/1762940455_1594147414402.jfif', '2025-11-12 09:40:55', 0, NULL);
+(26, '3M Carpet Map', 'Floor Mats', '3MCM-026', 'A 3M carpet mat is an entrance mat designed to trap dirt and moisture, protecting indoor floors. These mats use dual-fiber construction (often nylon and polypropylene) to scrape, hide, and absorb dirt and water from footwear, keeping the interior clean and safe. Key features include durability for high-traffic areas, non-slip backing to prevent movement, and an easy-to-clean design that typically involves regular vacuuming', 1300.00, NULL, '/sweepxpress/uploads/1762169135_6908912f37889.jpg', '2025-10-15 16:38:09', 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -378,7 +384,8 @@ INSERT INTO `product_stock_history` (`id`, `product_id`, `action`, `quantity`, `
 (17, 26, 'OUT', 1, 'Order #45 checkout', '2025-11-12 05:23:27'),
 (18, 26, 'OUT', 1, 'Order #47 checkout', '2025-11-12 05:55:47'),
 (19, 8, 'OUT', 1, 'Order #48 checkout', '2025-11-12 06:07:33'),
-(20, 9, 'OUT', 1, 'Order #49 checkout', '2025-11-12 07:39:01');
+(20, 9, 'OUT', 1, 'Order #49 checkout', '2025-11-12 07:39:01'),
+(21, 7, 'OUT', 1, 'Order #51 checkout', '2025-11-12 14:53:01');
 
 -- --------------------------------------------------------
 
@@ -460,7 +467,8 @@ INSERT INTO `stock_movements` (`id`, `product_id`, `location_id`, `movement_type
 (55, 26, 1, 'OUT', 1, 'Order #45 checkout', 'Ian paul Barquilla', 'Ian paul Barquilla', '2025-11-12 05:23:27'),
 (56, 26, 1, 'OUT', 1, 'Order #47 checkout', 'IAN PAUL BARQUILLA', 'IAN PAUL BARQUILLA', '2025-11-12 05:55:47'),
 (57, 8, 1, 'OUT', 1, 'Order #48 checkout', 'IAN PAUL BARQUILLA', 'IAN PAUL BARQUILLA', '2025-11-12 06:07:33'),
-(58, 9, 1, 'OUT', 1, 'Order #49 checkout', 'IAN PAUL BARQUILLA', 'IAN PAUL BARQUILLA', '2025-11-12 07:39:01');
+(58, 9, 1, 'OUT', 1, 'Order #49 checkout', 'IAN PAUL BARQUILLA', 'IAN PAUL BARQUILLA', '2025-11-12 07:39:01'),
+(59, 7, 1, 'OUT', 1, 'Order #51 checkout', 'Ian paul Barquilla', 'Ian paul Barquilla', '2025-11-12 14:53:01');
 
 -- --------------------------------------------------------
 
@@ -485,26 +493,54 @@ CREATE TABLE `users` (
   `city` varchar(100) DEFAULT NULL,
   `zip_code` varchar(20) DEFAULT NULL,
   `phone_number` varchar(20) DEFAULT NULL,
-  `gender` varchar(10) DEFAULT NULL
+  `gender` varchar(10) DEFAULT NULL,
+  `suspended_until` datetime DEFAULT NULL,
+  `password_reset_token` varchar(255) DEFAULT NULL,
+  `reset_token_expiry` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `google_id`, `name`, `username`, `email`, `password_hash`, `profile_image`, `role`, `created_at`, `phone`, `dark_mode`, `birth_date`, `street_address`, `city`, `zip_code`, `phone_number`, `gender`) VALUES
-(1, NULL, 'Admin', '', 'admin@sx.local', '$2y$10$97C0lN5nIyk7VJ5vUQHcYOmMZ2jCvBRKv8vujwES1jM2xZ2z8yZvy', NULL, 'admin', '2025-09-06 14:52:25', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(2, NULL, 'BRIAN', '', 'brian62@gmail.com', '$2y$10$.X99YppdGcBO8o.spUhTE.n2TZggTNPN1Ug77w1GeAaO9NuKouUrm', '/sweepxpress/uploads/profile_2_1762009131.jpg', 'admin', '2025-09-06 15:31:41', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(4, NULL, 'BRIAN', '', 'brian67@gmail.com', '$2y$10$dCucJfXPYqC7w5yIYtpP.ukSZ2yL71Wy3lLW8ym.hvTP22c9zMauC', NULL, 'customer', '2025-09-06 15:46:02', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(5, NULL, 'BIBI', '', 'brian61@gmail.com', '$2y$10$/MGIinkV.PorGJ9w97xC2uGN.JRdV4IPyRW1BRWnbXAMnGJqq7tMW', '/sweepxpress/uploads/profiles/1760416060_10a21fd7478c90915f00c8a6122735c9.jpg', 'customer', '2025-09-14 14:49:31', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(6, NULL, 'Admin User', '', 'admin@sweepxpress.com', '$2y$10$L9l4Tk6whxGqVZ2U1k7/auuE7nTZcY84XJ3C8f6zvbbtQkl7Agx3u', NULL, 'admin', '2025-09-16 03:02:36', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(7, NULL, 'Bryz', '', 'brian63@gmail.com', '$2y$10$X0qGgGXMwxeotkxoplW2YuxZ/1mM5NcCM7yG.xI0/adUa/8NIofpW', NULL, 'customer', '2025-09-20 15:09:38', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(9, '116798107768038634331', 'Brian Francisco', '', 'brianfrancisco102003@gmail.com', '', '/sweepxpress/uploads/profiles/1762168559_956372b1b403fd1969b995c4de748964.jpg', 'customer', '2025-10-04 14:45:21', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(10, '107546182234256110608', '[NTC-S] Brian Paul Royo Francisco', '', '422000909@ntc.edu.ph', '', NULL, 'customer', '2025-10-07 02:44:12', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(11, NULL, 'ror roxas', '', 'ROXAS1@Gmail.com', '$2y$10$vBfLyIF.X7eftg1hcYeD4.J7yCpYWQ1TLxsow6tqn78WG4ow2UG6y', NULL, 'business', '2025-10-21 04:17:26', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(12, '118145100184117452809', 'IAN PAUL BARQUILLA', 'BARQUILLA05', 'ianpaul.barquilla2001@gmail.com', '', '/sweepxpress/uploads/profiles/1762924817_f93b3ddb55eb28ee9b369588793751c8.jpg', '', '2025-11-12 05:10:45', NULL, 0, '0000-00-00', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY', 'Quezon city', '1103', '9155930658', 'Male'),
-(13, NULL, 'mama blue', '', 'admin@gmail.com', '$2y$10$t0r77QOoqRNHGzgawoHgE.SmPOuiQIxfXwMSkkBOM9ped0jvNrLlS', NULL, 'admin', '2025-11-12 05:11:21', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(14, NULL, 'Ian paul Barquilla', 'BARQUILLA05', 'user@gmail.com', '$2y$10$lLOelFUunhapu.e5OsyMPOR5ysQY7XvrVghtecgPAGMIAWVf40RGS', '/sweepxpress/uploads/profiles/1762924979_c36675e6947a5851817794287090a641.jpg', 'customer', '2025-11-12 05:20:46', NULL, 0, '2001-05-05', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY', 'Quezon city', '1103', '9155930658', 'Male');
+INSERT INTO `users` (`id`, `google_id`, `name`, `username`, `email`, `password_hash`, `profile_image`, `role`, `created_at`, `phone`, `dark_mode`, `birth_date`, `street_address`, `city`, `zip_code`, `phone_number`, `gender`, `suspended_until`, `password_reset_token`, `reset_token_expiry`) VALUES
+(1, NULL, 'Admin', '', 'admin@sx.local', '$2y$10$97C0lN5nIyk7VJ5vUQHcYOmMZ2jCvBRKv8vujwES1jM2xZ2z8yZvy', NULL, 'admin', '2025-09-06 14:52:25', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(2, NULL, 'BRIAN', '', 'brian62@gmail.com', '$2y$10$.X99YppdGcBO8o.spUhTE.n2TZggTNPN1Ug77w1GeAaO9NuKouUrm', '/sweepxpress/uploads/profile_2_1762009131.jpg', 'admin', '2025-09-06 15:31:41', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(4, NULL, 'BRIAN', '', 'brian67@gmail.com', '$2y$10$dCucJfXPYqC7w5yIYtpP.ukSZ2yL71Wy3lLW8ym.hvTP22c9zMauC', NULL, 'customer', '2025-09-06 15:46:02', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(5, NULL, 'BIBI', '', 'brian61@gmail.com', '$2y$10$/MGIinkV.PorGJ9w97xC2uGN.JRdV4IPyRW1BRWnbXAMnGJqq7tMW', '/sweepxpress/uploads/profiles/1760416060_10a21fd7478c90915f00c8a6122735c9.jpg', 'customer', '2025-09-14 14:49:31', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(6, NULL, 'Admin User', '', 'admin@sweepxpress.com', '$2y$10$L9l4Tk6whxGqVZ2U1k7/auuE7nTZcY84XJ3C8f6zvbbtQkl7Agx3u', NULL, 'admin', '2025-09-16 03:02:36', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(7, NULL, 'Bryz', '', 'brian63@gmail.com', '$2y$10$X0qGgGXMwxeotkxoplW2YuxZ/1mM5NcCM7yG.xI0/adUa/8NIofpW', NULL, 'customer', '2025-09-20 15:09:38', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(9, '116798107768038634331', 'Brian Francisco', '', 'brianfrancisco102003@gmail.com', '', '/sweepxpress/uploads/profiles/1762168559_956372b1b403fd1969b995c4de748964.jpg', 'customer', '2025-10-04 14:45:21', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(10, '107546182234256110608', '[NTC-S] Brian Paul Royo Francisco', '', '422000909@ntc.edu.ph', '', NULL, 'customer', '2025-10-07 02:44:12', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(11, NULL, 'ror roxas', '', 'ROXAS1@Gmail.com', '$2y$10$vBfLyIF.X7eftg1hcYeD4.J7yCpYWQ1TLxsow6tqn78WG4ow2UG6y', NULL, 'business', '2025-10-21 04:17:26', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(12, '118145100184117452809', 'IAN PAUL BARQUILLA', 'BARQUILLA05', 'ianpaul.barquilla2001@gmail.com', '', '/sweepxpress/uploads/profiles/1762924817_f93b3ddb55eb28ee9b369588793751c8.jpg', '', '2025-11-12 05:10:45', NULL, 0, '0000-00-00', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY', 'Quezon city', '1103', '9155930658', 'Male', NULL, '0adde0fcd8efc47dbcea837285ffe40c7022233001a6fde844a1bb75a97608fd', '2025-11-12 15:55:08'),
+(13, NULL, 'mama blue', '', 'admin@gmail.com', '$2y$10$t0r77QOoqRNHGzgawoHgE.SmPOuiQIxfXwMSkkBOM9ped0jvNrLlS', NULL, 'admin', '2025-11-12 05:11:21', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(14, NULL, 'Ian paul Barquilla', 'BARQUILLA05', 'user@gmail.com', '$2y$10$lLOelFUunhapu.e5OsyMPOR5ysQY7XvrVghtecgPAGMIAWVf40RGS', '/sweepxpress/uploads/profiles/1762924979_c36675e6947a5851817794287090a641.jpg', 'customer', '2025-11-12 05:20:46', NULL, 0, '2001-05-05', '98 JASMIN ST ROXAS DISTRICT QUEZON CITY', 'Quezon city', '1103', '9155930658', 'Male', NULL, NULL, NULL),
+(15, '118372698518427251448', '[NTC-S] Ian Paul Barquilla', '', '422004087@ntc.edu.ph', '', NULL, '', '2025-11-12 14:55:05', NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `user_logs`
+--
+
+CREATE TABLE `user_logs` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `action_by_id` int(11) DEFAULT NULL,
+  `action_type` varchar(50) NOT NULL,
+  `description` text DEFAULT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `user_logs`
+--
+
+INSERT INTO `user_logs` (`id`, `user_id`, `action_by_id`, `action_type`, `description`, `ip_address`, `created_at`) VALUES
+(0, 14, NULL, 'LOGIN_BLOCKED', 'Login attempt blocked due to active suspension.', '::1', '2025-11-12 20:55:12'),
+(0, 14, NULL, 'LOGIN_SUCCESS', 'User logged in successfully.', '::1', '2025-11-12 22:31:58');
 
 --
 -- Indexes for dumped tables
@@ -589,7 +625,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `deliveries`
 --
 ALTER TABLE `deliveries`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
 
 --
 -- AUTO_INCREMENT for table `inventory`
@@ -607,19 +643,19 @@ ALTER TABLE `locations`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=53;
 
 --
 -- AUTO_INCREMENT for table `order_items`
 --
 ALTER TABLE `order_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=96;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=99;
 
 --
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=38;
 
 --
 -- AUTO_INCREMENT for table `product_images`
@@ -631,19 +667,19 @@ ALTER TABLE `product_images`
 -- AUTO_INCREMENT for table `product_stock_history`
 --
 ALTER TABLE `product_stock_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT for table `stock_movements`
 --
 ALTER TABLE `stock_movements`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=59;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=60;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- Constraints for dumped tables
