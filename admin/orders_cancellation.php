@@ -33,7 +33,7 @@ if (!is_admin()) {
 // For Gmail, this must be a 16-character App Password, NOT your regular password.
 define('SMTP_HOST', 'smtp.gmail.com');
 define('SMTP_USERNAME', 'sweepxpress@gmail.com'); 
-define('SMTP_PASSWORD', 'pvvwstetwyfhkwng'); 
+define('SMTP_PASSWORD', 'qzstxtuoqdokbffa'); 
 define('SMTP_PORT', 587); 
 define('SMTP_SECURE', PHPMailer::ENCRYPTION_STARTTLS);
 define('EMAIL_FROM', 'sweepxpress@gmail.com');

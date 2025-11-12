@@ -1,10 +1,18 @@
 <?php
+// E:\xampp\htdocs\sweepxpress\customers\order_details.php
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+// ====================================================================
+// 1. CONFIGURATION, AUTHENTICATION, AT VARIABLE SETUP (WALANG OUTPUT)
+// ====================================================================
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/auth.php'; // I assume is_logged_in() is here
+
+// ====================================================================
+// 2. HEADER/REDIRECTION LOGIC (DAPAT NASA ITAAS NG HTML HEADER INCLUDE)
+// ====================================================================
 
 if (!is_logged_in()) {
     header("Location: /sweepxpress/login.php");
@@ -19,9 +27,7 @@ if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
 $order_id = (int)$_GET['id'];
 $user_id  = $_SESSION['user']['id'];
 
-// ====================================================================
-// ✅ CLEANUP HANDLER
-// ====================================================================
+// ✅ CLEANUP HANDLER - Must run before any HTML output
 if (isset($_GET['cleanup']) && $_GET['cleanup'] == 1) {
     $pdo->prepare("
         UPDATE orders 
@@ -33,7 +39,7 @@ if (isset($_GET['cleanup']) && $_GET['cleanup'] == 1) {
 }
 
 // ====================================================================
-// ✅ FETCH ORDER & ITEMS
+// 3. DATABASE FETCHING (WALANG OUTPUT)
 // ====================================================================
 try {
     $stmt = $pdo->prepare("
@@ -54,6 +60,7 @@ try {
         exit();
     }
 
+    // ✅ Fetch items (with added product image field)
     $stmt_items = $pdo->prepare("
         SELECT oi.*, p.name, p.price, p.image
         FROM order_items oi
@@ -76,7 +83,7 @@ $swal_icon = '';
 $is_admin_decision_swal = false;
 
 // ====================================================================
-// ✅ STATUS MESSAGES
+// 4. STATUS MESSAGES (FOR SWEETALERT)
 // ====================================================================
 if (isset($_GET['status'])) {
     switch ($_GET['status']) {
@@ -118,12 +125,11 @@ if (isset($_GET['status'])) {
     }
 }
 
-// ====================================================================
 // ✅ ADMIN DECISION POP-UPS
-// ====================================================================
 if (!empty($admin_note)) {
     if ($display_status === 'cancelled') {
         $swal_title = 'Cancellation Approved! ✅';
+        // Removed json_encode here, will do it directly in JS for cleaner code
         $swal_text = "Your request to cancel Order #{$order_id} has been APPROVED.\n\nAdmin Note: " . $admin_note;
         $swal_icon = 'success';
         $is_admin_decision_swal = true;
@@ -134,6 +140,11 @@ if (!empty($admin_note)) {
         $is_admin_decision_swal = true;
     }
 }
+
+// ====================================================================
+// 5. HTML HEADER INCLUDE (OUTPUT STARTS HERE - DITO ILIPAT!)
+// ====================================================================
+require_once __DIR__ . '/../includes/header.php'; 
 ?>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -164,7 +175,6 @@ if (!empty($admin_note)) {
         <p><strong>Total:</strong> ₱<?= number_format($order['total'], 2); ?></p>
     </div>
 
-    <!-- ✅ Cancellation Logic -->
     <?php if ($order['status'] === 'pending'): ?>
         <div class="card bg-light p-3 mb-4 border-danger">
             <h5 class="text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Request Cancellation</h5>
@@ -172,7 +182,7 @@ if (!empty($admin_note)) {
                 <input type="hidden" name="order_id" value="<?= h($order_id); ?>">
                 <div class="mb-3">
                     <label for="cancellationReason" class="form-label">Reason for Cancellation:</label>
-                    <textarea class="form-control" id="cancellationReason" name="reason" rows="3" required></textarea>
+                    <textarea class="form-control" id="cancellationReason" name="reason" rows="3" required minlength="10"></textarea>
                 </div>
                 <button type="submit" class="btn btn-danger">Submit Cancellation Request</button> 
             </form>
@@ -208,7 +218,6 @@ if (!empty($admin_note)) {
         </div>
     <?php endif; ?>
 
-    <!-- ✅ Items with Image -->
     <h4>🛒 Items in this Order</h4>
     <?php if ($items): ?>
         <div class="table-responsive">
@@ -217,9 +226,9 @@ if (!empty($admin_note)) {
                     <tr>
                         <th>Image</th>
                         <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Subtotal</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-end">Price</th>
+                        <th class="text-end">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -228,18 +237,22 @@ if (!empty($admin_note)) {
     ?>
     <?php foreach ($items as $item): ?>
         <?php
-            $imgFile = !empty($item['image']) ? __DIR__ . '/../assets/' . $item['image'] : null;
+            // Security check for image path
+            $safeImageName = basename($item['image'] ?? '');
+            $imgFile = !empty($safeImageName) ? __DIR__ . '/../assets/uploads/' . $safeImageName : null;
+            
             if (!$imgFile || !file_exists($imgFile)) {
                 $imgPath = $defaultImage;
             } else {
-                $imgPath = '/sweepxpress/assets/' . $item['image'];
+                // Assuming images are stored in /assets/uploads/
+                $imgPath = '/sweepxpress/assets/uploads/' . $safeImageName;
             }
         ?>
         <tr>
             <td class="text-center">
                 <img src="<?= $imgPath; ?>" alt="<?= h($item['name']); ?>" 
-                     class="rounded" width="70" height="70" 
-                     style="object-fit: cover;">
+                    class="rounded" width="70" height="70" 
+                    style="object-fit: cover;">
             </td>
             <td><?= h($item['name']); ?></td>
             <td class="text-center"><?= h($item['quantity']); ?></td>
@@ -253,13 +266,22 @@ if (!empty($admin_note)) {
     <?php else: ?>
         <div class="alert alert-warning">⚠️ No items found for this order.</div>
     <?php endif; ?>
+
+    <a href="/sweepxpress/customers/my_orders.php" class="btn btn-secondary mt-3">← Back to My Orders</a>
 </div>
 
-<!-- ================= SweetAlert Logic ================= -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // PHP variables are correctly escaped using json_encode in the JS section
     const swalTitle = <?= json_encode($swal_title); ?>;
-    const swalText = <?= json_encode($swal_text); ?>;
+    // Check if the text contains newline for admin decision notes
+    let swalText = <?= json_encode($swal_text); ?>;
+    
+    // Replace newline characters for better display in SweetAlert
+    if (swalText.includes("\\n")) {
+        swalText = swalText.replace(/\\n/g, "\n");
+    }
+
     const swalIcon = <?= json_encode($swal_icon); ?>;
     const orderId = <?= json_encode($order_id); ?>;
     const isAdminDecision = <?= $is_admin_decision_swal ? 'true' : 'false'; ?>;
@@ -268,13 +290,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (swalTitle && swalIcon) {
         Swal.fire({
             title: swalTitle,
+            // Use pre-formatted text that handles \n
             text: swalText,
             icon: swalIcon,
-            confirmButtonText: 'Got it'
+            confirmButtonText: 'Got it',
+            // Pre-wrap handles the \n characters as line breaks
+            customClass: {
+                content: 'swal2-pre-wrap'
+            }
         }).then(() => {
             if (isAdminDecision === true) {
+                // Redirect to cleanup URL
                 window.location.href = '?id=' + orderId + '&cleanup=1';
             } else {
+                // Clean the URL without reloading (only for non-admin decision messages)
                 if (window.history.replaceState) {
                     const cleanUrl = window.location.href.split('?')[0];
                     window.history.replaceState({}, '', cleanUrl + '?id=' + orderId);
@@ -289,7 +318,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (cancelForm) {
         cancelForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            if (reasonInput.value.trim().length < 10) {
+            // Using checkValidity() ensures both 'required' and 'minlength' are checked
+            if (!reasonInput.checkValidity()) {
                 reasonInput.reportValidity();
                 return;
             }
@@ -322,15 +352,31 @@ document.addEventListener('DOMContentLoaded', function() {
             }).then((result) => {
                 const form = document.getElementById('confirmReceivedForm');
                 const input = document.createElement('input');
+                
                 input.type = 'hidden';
                 input.name = 'received';
+                
+                // If confirmed, send 'yes', otherwise send 'no'
                 input.value = result.isConfirmed ? 'yes' : 'no';
-                form.appendChild(input);
-                form.submit();
+                
+                // Only submit if the user pressed one of the buttons (confirmed or cancelled in the modal)
+                if (result.isConfirmed || result.dismiss === Swal.DismissReason.cancel) {
+                    form.appendChild(input);
+                    form.submit();
+                }
             });
         });
     }
 });
 </script>
 
-<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+<style>
+.swal2-pre-wrap {
+    white-space: pre-wrap !important;
+}
+</style>
+
+<?php 
+// 6. FOOTER INCLUDE
+require_once __DIR__ . '/../includes/footer.php'; 
+?>

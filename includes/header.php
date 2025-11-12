@@ -122,7 +122,7 @@ require_once __DIR__ . '/../config.php';
             } else {
                 echo '/sweepxpress/index.php';
             }
-        ?>"> 
+        ?>"
             Sweep<span class="text-primary">X</span>press
         </a>
 
