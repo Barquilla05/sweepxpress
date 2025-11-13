@@ -4,16 +4,21 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/header_public.php'; // light header, walang auth check
+require_once __DIR__ . '/includes/header_public.php'; // header na walang auth
 
-// --- 1. Kunin ang token mula sa URL ---
 $token = $_GET['token'] ?? '';
 $show_form = false;
 $message = '';
 
 if ($token) {
-    // --- 2. Hanapin ang user gamit ang password_reset_token at valid expiry ---
-    $stmt = $pdo->prepare("SELECT id, username, email FROM users WHERE password_reset_token = ? AND reset_token_expiry > NOW() LIMIT 1");
+    // --- 1. Hanapin ang user gamit ang token sa password_resets table ---
+    $stmt = $pdo->prepare("
+        SELECT u.id, u.username, u.email
+        FROM users u
+        INNER JOIN password_resets pr ON pr.user_id = u.id
+        WHERE pr.token = ? AND pr.expires_at > NOW()
+        LIMIT 1
+    ");
     $stmt->execute([$token]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -21,7 +26,7 @@ if ($token) {
         $show_form = true;
         $user_id = $user['id'];
 
-        // --- 3. Kapag nag-submit ng bagong password ---
+        // --- 2. Kung nag-submit ng bagong password ---
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $new_password = trim($_POST['new_password'] ?? '');
             $confirm_password = trim($_POST['confirm_password'] ?? '');
@@ -33,10 +38,14 @@ if ($token) {
             } elseif (strlen($new_password) < 6) {
                 $message = '<div class="alert alert-danger">Password must be at least 6 characters long.</div>';
             } else {
-                // --- 4. I-hash ang password at i-update sa database ---
+                // --- 3. I-hash ang password at i-update ---
                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-                $stmt_update = $pdo->prepare("UPDATE users SET password = ?, password_reset_token = NULL, reset_token_expiry = NULL WHERE id = ?");
+
+                $stmt_update = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
                 $stmt_update->execute([$hashed_password, $user_id]);
+
+                // --- 4. Burahin ang ginamit na token ---
+                $pdo->prepare("DELETE FROM password_resets WHERE user_id = ?")->execute([$user_id]);
 
                 $message = '<div class="alert alert-success text-center">
                                 Your password has been updated successfully! 

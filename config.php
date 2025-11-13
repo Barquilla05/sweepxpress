@@ -106,6 +106,7 @@ if (!function_exists('generateSKU')) {
     }
 }
 
+date_default_timezone_set('Asia/Manila');
 
 
 // --------------------------------------------------------------------

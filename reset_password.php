@@ -1,150 +1,134 @@
 <?php
-// E:\xampp\htdocs\sweepxpress\resetpassword.php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+require_once __DIR__ . '/config.php';
 
-// 1. CONFIGURATION AT LIBRARIES
-require_once __DIR__ . '/config.php'; // I-assume na nandito ang PDO $pdo connection
-require_once __DIR__ . '/includes/auth.php'; // Kung may helper functions
-require_once __DIR__ . '/includes/email_config.php'; // Dito naka-define ang SMTP constants
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// I-assume na naka-install ang PHPMailer via Composer at nandito ang autoload
-// Kung hindi, palitan ang path sa iyong PHPMailer setup file.
-require_once __DIR__ . '/vendor/autoload.php'; 
+if (!isset($_GET['token']) || !isset($_GET['email'])) {
+    die("Invalid or missing token/email.");
+}
 
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-
-$error_message = '';
-$success_message = '';
+$token = $_GET['token'];
+$email = $_GET['email'];
+$error = '';
+$success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email']);
+    $new_password = trim($_POST['new_password'] ?? '');
+    $confirm_password = trim($_POST['confirm_password'] ?? '');
 
-    if (empty($email)) {
-        $error_message = "Please enter your email address.";
+    if (empty($new_password) || empty($confirm_password)) {
+        $error = "Please fill in all fields.";
+    } elseif ($new_password !== $confirm_password) {
+        $error = "Passwords do not match.";
     } else {
         try {
-            // A. CHECK USER
-            $stmt = $pdo->prepare("SELECT id, email, name FROM users WHERE email = ? LIMIT 1");
-            $stmt->execute([$email]);
+            // ✅ Check token + expiry from users table
+            $stmt = $pdo->prepare("
+                SELECT id, reset_token_expiry 
+                FROM users 
+                WHERE password_reset_token = :token AND email = :email 
+                LIMIT 1
+            ");
+            $stmt->execute([':token' => $token, ':email' => $email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($user) {
-                $user_id = $user['id'];
-                $token = bin2hex(random_bytes(32));
-                // Token is valid for 1 hour
-                $expires_at = date('Y-m-d H:i:s', time() + 3600); 
-
-                // B. SAVE TOKEN TO DATABASE (Password Resets Table)
-                // Delete any existing tokens for this user first
-                $pdo->prepare("DELETE FROM password_resets WHERE user_id = ?")->execute([$user_id]);
-                
-                // Insert the new token
-                $stmt_insert = $pdo->prepare("
-                    INSERT INTO password_resets (user_id, token, expires_at) 
-                    VALUES (?, ?, ?)
-                ");
-                $stmt_insert->execute([$user_id, $token, $expires_at]);
-
-                // C. SEND EMAIL
-                $mail = new PHPMailer(true);
-
-                // --- 🚩 DEBUG MODE ACTIVATED (Para makita ang "Could not connect" error) ---
-                $mail->SMTPDebug = 2; // Ipakita ang debug output
-                $mail->Debugoutput = 'html'; 
-                // --- 🚩 END DEBUG MODE ---
-                
-                $mail->isSMTP();
-                $mail->Host       = SMTP_HOST;
-                $mail->SMTPAuth   = true;
-                $mail->Username   = SMTP_USER;
-                $mail->Password   = SMTP_PASS;
-                $mail->SMTPSecure = SMTP_SECURE;
-                $mail->Port       = SMTP_PORT;
-
-                // Recipients
-                $mail->setFrom(SMTP_USER, 'SweepXpress Support');
-                $mail->addAddress($email, $user['name']);
-
-                // Content
-                $reset_link = "http://localhost/sweepxpress/new_password.php?token=" . urlencode($token);
-
-
-                
-                $mail->isHTML(true);
-                $mail->Subject = 'Password Reset Request';
-                $mail->Body    = "
-                    Hello {$user['name']},<br><br>
-                    You requested a password reset. Click the link below to reset your password. This link will expire in 1 hour.<br><br>
-                    <a href='{$reset_link}'>Reset My Password</a><br><br>
-                    If you did not request this, please ignore this email.
-                ";
-                $mail->AltBody = "Hello {$user['name']}, Copy this link to reset your password: {$reset_link}";
-
-                $mail->send();
-                $success_message = "A password reset link has been sent to your email address: **{$email}**. Please check your inbox and spam folder.";
-
+            if (!$user) {
+                $error = "Invalid token or email.";
+            } elseif (strtotime($user['reset_token_expiry']) < time()) {
+                $error = "Token has expired.";
             } else {
-                // To prevent email enumeration, we still show a success-like message
-                $success_message = "If an account with that email exists, a password reset link has been sent.";
-            }
+                // ✅ Update password and clear token
+                $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
+                $update = $pdo->prepare("
+                    UPDATE users 
+                    SET password_hash = :password, password_reset_token = NULL, reset_token_expiry = NULL 
+                    WHERE id = :id
+                ");
+                $update->execute([':password' => $hashed_password, ':id' => $user['id']]);
 
-        } catch (Exception $e) {
-            // I-capture ang error, lalo na ang "Could not connect"
-            $error_message = "An error occurred: " . $e->getMessage();
-            // Kung may debug output, lalabas ito sa screen kasama ng error message.
+                $success = "Password reset successful. You can now <a href='login.php'>login</a>.";
+            }
+        } catch (PDOException $e) {
+            $error = "Database error: " . $e->getMessage();
         }
     }
 }
-// 2. HTML HEADER INCLUDE (DAPAT NAKALAGAY SA HULI BAGO ANG HTML OUTPUT)
-require_once __DIR__ . '/includes/header.php';
 ?>
 
-<div class="container my-5">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reset Password | SweepXpress</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+    body {
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Poppins', sans-serif;
+    }
+    .card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .btn-primary {
+        background: linear-gradient(90deg, #007bff, #6610f2);
+        border: none;
+        border-radius: 10px;
+        transition: 0.3s;
+    }
+    .btn-primary:hover {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+    .form-control {
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h3 class="mb-0">Reset Password</h3>
+        <div class="col-md-6 col-lg-5">
+            <div class="card p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" width="70" alt="Lock Icon">
+                    <h2 class="mt-3">Reset Password</h2>
+                    <p class="text-muted">Enter your new password below.</p>
                 </div>
-                <div class="card-body">
-                    <?php if ($success_message): ?>
-                        <div class="alert alert-success" role="alert">
-                            <?= h($success_message); ?>
-                        </div>
-                    <?php endif; ?>
-                    
-                    <?php if ($error_message): ?>
-                        <div class="alert alert-danger" role="alert">
-                            <?= h($error_message); ?>
-                        </div>
-                    <?php endif; ?>
 
-                    <?php if (!$success_message): ?>
-                        <p class="text-center mb-4">Enter your email to receive a password reset link.</p>
-                        <form method="POST" action="resetpassword.php">
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email" required>
-                            </div>
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary">Send Reset Link</button>
-                            </div>
-                        </form>
-                    <?php endif; ?>
+                <?php if ($error): ?>
+                    <div class="alert alert-danger text-center"><?= htmlspecialchars($error) ?></div>
+                <?php endif; ?>
 
-                    <div class="text-center mt-3">
-                        <a href="/sweepxpress/login.php" class="text-secondary">Back to Login</a>
-                    </div>
-                </div>
+                <?php if ($success): ?>
+                    <div class="alert alert-success text-center"><?= $success ?></div>
+                <?php else: ?>
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label fw-semibold">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label fw-semibold">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 py-2">Reset Password</button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
-<?php 
-// 3. FOOTER INCLUDE
-require_once __DIR__ . '/includes/footer.php'; 
-?>
+</body>
+</html>
