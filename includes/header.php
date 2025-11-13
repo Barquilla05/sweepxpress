@@ -123,7 +123,7 @@ require_once __DIR__ . '/../config.php';
                 echo '/sweepxpress/index.php';
             }
         ?>"
-            Sweep<span class="text-primary">X</span>press
+            Sweep<span class="text-primary">sweepX</span>press
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">

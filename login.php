@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($email && $pass) {
         // IMPORTANT: Ensure suspended_until is fetched
-        $stmt = $pdo->prepare("SELECT *, suspended_until FROM users WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id, role, password_hash, suspended_until FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $u = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     // 1. DENY LOGIN: Clear session (just in case)
                     if (session_status() === PHP_SESSION_ACTIVE) {
-                         session_unset(); 
+                           session_unset(); 
                     }
                     
                     // NEW: Log the attempted login which was blocked by suspension
@@ -72,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // =========================================================================
             
             // NEW: Log the successful login action AFTER all checks pass
-            // action_by_id is null because the user is performing the action on themselves
             log_user_action($pdo, $u['id'], 'LOGIN_SUCCESS', 'User logged in successfully.'); 
 
             // User is not suspended or suspension expired. Continue with normal login:
@@ -165,6 +164,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .separator:not(:empty)::after {
             margin-left: .5em;
         }
+        /* Style for the icon button inside the form-floating/input group */
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            z-index: 10;
+            color: #6c757d; /* Muted color */
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body class="login-container">
@@ -192,13 +202,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <label for="email">Email address</label>
             </div>
             
-            <div class="form-floating mb-3">
-            <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
-            <label for="password">Password</label>
-          </div>
-          <div class="d-flex justify-content-end mb-3">
-            <a href="/sweepxpress/forgot_password.php" class="text-sm text-decoration-none">Forgot Password?</a>
-          </div>
+            <div class="form-floating mb-3 position-relative">
+              <input type="password" class="form-control" id="password" name="password" placeholder="Password" required>
+              <label for="password">Password</label>
+              <span class="password-toggle" id="togglePassword">
+                  <i class="bi bi-eye-slash" aria-hidden="true"></i>
+              </span>
+            </div>
+            <div class="d-flex justify-content-end mb-3">
+              <a href="/sweepxpress/forgot_password.php" class="text-sm text-decoration-none">Forgot Password?</a>
+            </div>
 
             <button type="submit" id="loginButton" class="btn btn-primary btn-lg w-100 mb-3 fw-bold">
                 Login
@@ -227,16 +240,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    document.getElementById('loginForm').addEventListener('submit', function(event) {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Form submission loading state
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            const button = document.getElementById('loginButton');
+            button.disabled = true;
+            button.innerHTML = `
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Logging in...
+            `;
+        });
         
-        const button = document.getElementById('loginButton');
-        
-        button.disabled = true;
-        
-        button.innerHTML = `
-            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-            Logging in...
-        `;
+        // Show/Hide Password Logic
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordInput = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function() {
+            // Toggle the type attribute
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle the icon (bi-eye-slash <-> bi-eye)
+            const icon = this.querySelector('i');
+            icon.classList.toggle('bi-eye');
+            icon.classList.toggle('bi-eye-slash');
+        });
     });
   </script>
 </body>
